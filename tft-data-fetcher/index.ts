@@ -6,6 +6,7 @@ import { getChallengerLeagueWithLimiter, getGrandMasterLeagueWithLimiter, getMat
 import { TFTMatch } from './schema/match';
 import mongoose from 'mongoose';
 import { LeagueItemDTO } from 'twisted/dist/models-dto';
+import schedule from 'node-schedule';
 
 
 
@@ -86,10 +87,10 @@ async function fetchDataForSummoner(summoner: ISummoner) {
 
 }
 
-fetchAndSaveData();
+// fetchAndSaveData();
 
 // Fetch and save data from Riot API every day
-// schedule.scheduleJob('0 0 * * *', fetchAndSaveData);
+schedule.scheduleJob('0 * * * *', fetchAndSaveData);
 
 
 const PORT = process.env.PORT || 5000;
