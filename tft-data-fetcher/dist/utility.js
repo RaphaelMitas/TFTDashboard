@@ -15,7 +15,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getMatchWithLimiter = exports.getMatchListWithLimiter = exports.getMasterLeagueWithLimiter = exports.getGrandMasterLeagueWithLimiter = exports.getChallengerLeagueWithLimiter = exports.getPuuidByNamesWithLimiter = void 0;
 const twisted_1 = require("twisted");
-const bottleneck_1 = __importDefault(require("bottleneck"));
 const summoner_1 = require("./schema/summoner");
 const dotenv_1 = __importDefault(require("dotenv"));
 const constants_1 = require("twisted/dist/constants");
@@ -24,13 +23,9 @@ const RIOT_API_KEY = process.env.RIOT_API_KEY;
 const api = new twisted_1.TftApi({
     key: RIOT_API_KEY,
 });
-//
-// Get PUUID by summoner name
-//
-const getPuuidByNamesLimiter = new bottleneck_1.default({
-    minTime: 60000 / 1300,
-    maxConcurrent: 1, // No more than 30 tasks running at once
-});
+function isRateLimitError(error) {
+    return error.status === 429;
+}
 function getPuuidByNames({ summoner, region }) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -46,22 +41,26 @@ function getPuuidByNames({ summoner, region }) {
             return summonerObject;
         }
         catch (error) {
-            console.log('Error while getting PUUID:', error);
-            throw error;
+            if (isRateLimitError(error)) {
+                const retryAfter = error.rateLimits.RetryAfter;
+                console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds');
+                yield new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                return getPuuidByNames({ summoner, region });
+            }
+            else {
+                console.log('Error while getting PUUID:', error);
+                throw error;
+            }
         }
     });
 }
 function getPuuidByNamesWithLimiter({ summoner, region }) {
-    return getPuuidByNamesLimiter.schedule(() => getPuuidByNames({ summoner: summoner, region: region }));
+    return getPuuidByNames({ summoner: summoner, region: region });
 }
 exports.getPuuidByNamesWithLimiter = getPuuidByNamesWithLimiter;
 //
 // Get challenger, grandmaster and master league
 //
-const getChallengerLeagueLimiter = new bottleneck_1.default({
-    minTime: 600000 / 400,
-    maxConcurrent: 1,
-});
 function getChallengerLeague(region) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -69,19 +68,23 @@ function getChallengerLeague(region) {
             return challengerLeague.response.entries;
         }
         catch (error) {
-            console.log('Error while getting challenger league:', error);
-            throw error;
+            if (isRateLimitError(error)) {
+                const retryAfter = error.rateLimits.RetryAfter;
+                console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds');
+                yield new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                return getChallengerLeague(region);
+            }
+            else {
+                console.log('Error while getting challenger league:', error);
+                throw error;
+            }
         }
     });
 }
 function getChallengerLeagueWithLimiter(region) {
-    return getChallengerLeagueLimiter.schedule(() => getChallengerLeague(region));
+    return getChallengerLeague(region);
 }
 exports.getChallengerLeagueWithLimiter = getChallengerLeagueWithLimiter;
-const getGrandMasterLeagueLimiter = new bottleneck_1.default({
-    minTime: 600000 / 400,
-    maxConcurrent: 1,
-});
 function getGrandMasterLeague(region) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -89,19 +92,23 @@ function getGrandMasterLeague(region) {
             return grandmasterLeague.response.entries;
         }
         catch (error) {
-            console.log('Error while getting grandmaster league:', error);
-            throw error;
+            if (isRateLimitError(error)) {
+                const retryAfter = error.rateLimits.RetryAfter;
+                console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds');
+                yield new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                return getGrandMasterLeague(region);
+            }
+            else {
+                console.log('Error while getting grandmaster league:', error);
+                throw error;
+            }
         }
     });
 }
 function getGrandMasterLeagueWithLimiter(region) {
-    return getGrandMasterLeagueLimiter.schedule(() => getGrandMasterLeague(region));
+    return getGrandMasterLeague(region);
 }
 exports.getGrandMasterLeagueWithLimiter = getGrandMasterLeagueWithLimiter;
-const getMasterLeagueLimiter = new bottleneck_1.default({
-    minTime: 600000 / 400,
-    maxConcurrent: 1,
-});
 function getMasterLeague(region) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -109,22 +116,26 @@ function getMasterLeague(region) {
             return masterLeague.response.entries;
         }
         catch (error) {
-            console.log('Error while getting master league:', error);
-            throw error;
+            if (isRateLimitError(error)) {
+                const retryAfter = error.rateLimits.RetryAfter;
+                console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds');
+                yield new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                return getMasterLeague(region);
+            }
+            else {
+                console.log('Error while getting master league:', error);
+                throw error;
+            }
         }
     });
 }
 function getMasterLeagueWithLimiter(region) {
-    return getMasterLeagueLimiter.schedule(() => getMasterLeague(region));
+    return getMasterLeague(region);
 }
 exports.getMasterLeagueWithLimiter = getMasterLeagueWithLimiter;
 //
 // Get match list by PUUID
 //
-const getMatchListLimiter = new bottleneck_1.default({
-    minTime: 10000 / 200,
-    maxConcurrent: 1,
-});
 function getMatchList(puuid, region, matchCount) {
     return __awaiter(this, void 0, void 0, function* () {
         const regionGroup = (0, constants_1.regionToRegionGroup)(region);
@@ -133,22 +144,26 @@ function getMatchList(puuid, region, matchCount) {
             return matchList.response;
         }
         catch (error) {
-            console.log('Error while getting match list:', error);
-            throw error;
+            if (isRateLimitError(error)) {
+                const retryAfter = error.rateLimits.RetryAfter;
+                console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds');
+                yield new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                return getMatchList(puuid, region, matchCount);
+            }
+            else {
+                console.log('Error while getting match list:', error);
+                throw error;
+            }
         }
     });
 }
 function getMatchListWithLimiter(puuid, region, matchCount) {
-    return getMatchListLimiter.schedule(() => getMatchList(puuid, region, matchCount));
+    return getMatchList(puuid, region, matchCount);
 }
 exports.getMatchListWithLimiter = getMatchListWithLimiter;
 //
 // Get match by match ID
 //
-const getMatchLimiter = new bottleneck_1.default({
-    minTime: 10000 / 150,
-    maxConcurrent: 1,
-});
 function getMatch(matchId, region) {
     return __awaiter(this, void 0, void 0, function* () {
         const regionGroup = (0, constants_1.regionToRegionGroup)(region);
@@ -157,12 +172,20 @@ function getMatch(matchId, region) {
             return match.response;
         }
         catch (error) {
-            console.log('Error while getting match:', error);
-            throw error;
+            if (isRateLimitError(error)) {
+                const retryAfter = error.rateLimits.RetryAfter;
+                console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds');
+                yield new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                return getMatch(matchId, region);
+            }
+            else {
+                console.log('Error while getting match:', error);
+                throw error;
+            }
         }
     });
 }
 function getMatchWithLimiter(matchId, region) {
-    return getMatchLimiter.schedule(() => getMatch(matchId, region));
+    return getMatch(matchId, region);
 }
 exports.getMatchWithLimiter = getMatchWithLimiter;
