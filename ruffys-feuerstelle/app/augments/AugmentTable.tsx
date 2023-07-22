@@ -15,7 +15,7 @@ import Paper from '@mui/material/Paper';
 import { visuallyHidden } from '@mui/utils';
 import { Checkbox, FormControlLabel, FormGroup, InputBase, Typography } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import Augment from './Augment';
+import DataDragonAugment from './Augment';
 import AugmentIcon from 'components/icons/AugmentsIcon';
 
 
@@ -23,25 +23,25 @@ interface Data {
   augment: string;
   icon: string;
   games: number;
-  place: number,
+  place: string,
   top4: string,
   win: string,
-  at3_2: number;
-  at2_1: number;
-  at4_2: number;
+  at3_2: string;
+  at2_1: string;
+  at4_2: string;
 }
 
-function createData(
-  augment: string,
+function createData({
+  augment = "",
   icon = "",
   games = 0,
-  place = 0,
+  place = "0",
   top4 = '0%',
   win = '0%',
-  at2_1 = 0,
-  at3_2 = 0,
-  at4_2 = 0,
-): Data {
+  at2_1 = "-",
+  at3_2 = "-",
+  at4_2 = "-",
+}): Data {
   return {
     augment,
     icon,
@@ -156,7 +156,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
       <TableRow>
         {headCells.map((headCell) => (
           <TableCell
-            key={headCell.id}
+            key={`headcell-${headCell.id}`}
             align={headCell.numeric ? 'right' : 'left'}
             padding={headCell.disablePadding ? 'none' : 'normal'}
             sortDirection={orderBy === headCell.id ? order : false}
@@ -259,12 +259,23 @@ function EnhancedTableToolbar({ augmentQualityState, handleAugmentQualityChange 
   );
 }
 
-export default function AugmentTable({ augments }: { augments: Augment[] }) {
+export default function AugmentTable({ augments }: { augments: DataDragonAugment[] }) {
   const [order, setOrder] = React.useState<Order>('desc');
   const [orderBy, setOrderBy] = React.useState<keyof Data>('games');
 
   const rows = augments.map((augment) => {
-    return createData(augment.label, augment.icon);
+    return createData({
+      augment: augment.label,
+      icon: augment.icon,
+      games: augment.total_games,
+      place: augment.average_placement.toFixed(2),
+      top4: `${augment.top4_percent.toFixed(2)}%`,
+      win: `${augment.win_percent.toFixed(2)}%`,
+      at2_1: augment.average_placement_at_stage_2 ? augment.average_placement_at_stage_2.toFixed(2) : '~',
+      at3_2: augment.average_placement_at_stage_3 ? augment.average_placement_at_stage_3.toFixed(2) : '~',
+      at4_2: augment.average_placement_at_stage_4 ? augment.average_placement_at_stage_4.toFixed(2) : '~',
+
+    });
   })
 
   const handleRequestSort = (
@@ -317,7 +328,7 @@ export default function AugmentTable({ augments }: { augments: Augment[] }) {
                   <TableRow
                     hover
                     tabIndex={-1}
-                    key={row.augment}
+                    key={index}
                   >
                     <TableCell
                       component="th"

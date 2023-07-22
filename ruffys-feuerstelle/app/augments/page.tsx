@@ -5,45 +5,80 @@ import Typography from '@mui/material/Typography';
 import AugmentTable from './AugmentTable';
 import tftJSON from 'data/tft.json';
 import tftTypes, { Item } from 'data/tftTypes';
-import Augment from './Augment';
+import Augment, { MongoAugment, DataDragonAugment } from './Augment';
+import { db } from 'data/mongoDb'
 
 
 async function getServerSideProps() {
-  const tftData: any = tftJSON
-  return tftData
+
+  const data = (await db.collection('augments').find({ game_version: "Version 13.14.520.6878 (Jul 13 2023/19:59:37) [PUBLIC] <Releases/13.14>" }).toArray()) as unknown as MongoAugment[]
+  const mongoData: MongoAugment[] = []
+  for await (const augment of data) {
+    mongoData.push(augment)
+  }
+
+  const dragonData: any = tftJSON
+  return { dragonData, mongoData }
 }
 
 const communityDragonBaseURL = "https://raw.communitydragon.org/latest/game/"
 
 export default async function AugmentPage() {
-  const augmentData = await getServerSideProps().then((data) => {
+  const augmentData = await getServerSideProps().then(({ dragonData, mongoData }) => {
 
     const augments: Augment[] = [];
 
-    data.items.forEach((item: Item) => {
-      if (item.apiName.startsWith("TFT9_Augment_")) {
+    mongoData.forEach((item: MongoAugment) => {
+      const dragonDataItems: Item[] = dragonData.items
+      const dragonItem = dragonDataItems.find((dragonItem: Item) => dragonItem.apiName === item.augment)
 
-        // let parsedIcon = item.icon.split("/");
-        const parsedIcon = item.icon.toLocaleLowerCase().replace(".tex", ".png")
-        // parsedIcon = parsedIcon
-        const iconURL = communityDragonBaseURL + parsedIcon;
-        console.log(iconURL);
-
-        augments.push(new Augment(
-          {
-            apiName: item.apiName,
-            associatedTraits: item.associatedTraits,
-            composition: item.composition,
-            desc: item.desc,
-            effects: item.effects,
-            icon: iconURL,
-            incompatibleTraits: item.incompatibleTraits,
-            label: item.name ? item.name : '',
-          }
-        ));
+      if (!dragonItem) {
+        console.log('dragonItem not found for augment: ', item.augment)
+        return
       }
+
+
+
+      const parsedIcon = dragonItem.icon.toLocaleLowerCase().replace(".tex", ".png")
+      // parsedIcon = parsedIcon
+      const iconURL = communityDragonBaseURL + parsedIcon;
+
+
+      augments.push(new Augment({
+        apiName: dragonItem.apiName,
+        associatedTraits: dragonItem.associatedTraits,
+        composition: dragonItem.composition,
+        desc: dragonItem.desc,
+        effects: dragonItem.effects,
+        icon: iconURL,
+        incompatibleTraits: dragonItem.incompatibleTraits,
+        label: dragonItem.name ? dragonItem.name : '',
+        ...item
+      }));
     });
 
+    // dragonData.items.forEach((item: Item) => {
+    //   if (item.apiName.startsWith("TFT9_Augment_")) {
+
+    // // let parsedIcon = item.icon.split("/");
+    // const parsedIcon = item.icon.toLocaleLowerCase().replace(".tex", ".png")
+    // // parsedIcon = parsedIcon
+    // const iconURL = communityDragonBaseURL + parsedIcon;
+
+    //     augments.push(new DataDragonAugment(
+    //       {
+    //         apiName: item.apiName,
+    //         associatedTraits: item.associatedTraits,
+    //         composition: item.composition,
+    //         desc: item.desc,
+    //         effects: item.effects,
+    //         icon: iconURL,
+    //         incompatibleTraits: item.incompatibleTraits,
+    //         label: item.name ? item.name : '',
+    //       }
+    //     ));
+    //   }
+    // });
     return augments;
   });
 

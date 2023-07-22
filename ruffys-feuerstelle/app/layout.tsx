@@ -14,17 +14,12 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
-import StarIcon from '@mui/icons-material/Star';
-import ChecklistIcon from '@mui/icons-material/Checklist';
-import SettingsIcon from '@mui/icons-material/Settings';
-import SupportIcon from '@mui/icons-material/Support';
-import LogoutIcon from '@mui/icons-material/Logout';
 import ThemeRegistry from '../styles/ThemeRegistry';
 import AugmentIcon from 'components/icons/AugmentsIcon';
 
 export const metadata = {
-  title: 'Next.js App Router + Material UI v5',
-  description: 'Next.js App Router + Material UI v5',
+  title: 'Ruffys Feuerstelle',
+  description: 'Ruffys Feuerstelle',
 };
 
 const roboto = Roboto({ weight: ['300', '400', '500', '700'], subsets: ['latin'] });
@@ -38,7 +33,7 @@ const LINKS = [
   { text: 'Augments', href: '/augments', icon: AugmentIcon },
 ];
 
-const PLACEHOLDER_LINKS: { text: string; icon: React.ElementType }[]  = [
+const PLACEHOLDER_LINKS: { text: string; icon: React.ElementType }[] = [
   // { text: 'Settings', icon: SettingsIcon },
   // { text: 'Support', icon: SupportIcon },
   // { text: 'Logout', icon: LogoutIcon },
@@ -79,8 +74,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <ListItemButton component={Link} href={href}>
                     {Icon &&
                       <ListItemIcon>
-                      <Icon />
-                    </ListItemIcon>
+                        <Icon />
+                      </ListItemIcon>
                     }
                     <ListItemText primary={text} />
                   </ListItemButton>
