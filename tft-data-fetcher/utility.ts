@@ -53,7 +53,7 @@ export async function getPuuidByNames({ summoner, region }: PuuidByNamesProps): 
     } catch (error: unknown) {
         if (isRateLimitError(error)) {
             const retryAfter = error.rateLimits.RetryAfter;
-            console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds');
+            console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds during getPuuidByNames');
             await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
             return getPuuidByNames({ summoner, region });
         } else {
@@ -78,7 +78,7 @@ export async function getChallengerLeague(region: Regions): Promise<LeagueItemDT
     } catch (error: unknown) {
         if (isRateLimitError(error)) {
             const retryAfter = error.rateLimits.RetryAfter;
-            console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds');
+            console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds during getChallengerLeague');
             await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
             return getChallengerLeague(region);
         } else {
@@ -99,7 +99,7 @@ export async function getGrandMasterLeague(region: Regions): Promise<LeagueItemD
     } catch (error: unknown) {
         if (isRateLimitError(error)) {
             const retryAfter = error.rateLimits.RetryAfter;
-            console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds');
+            console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds during getGrandMasterLeague');
             await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
             return getGrandMasterLeague(region);
         } else {
@@ -120,7 +120,7 @@ export async function getMasterLeague(region: Regions): Promise<LeagueItemDTO[]>
     } catch (error: unknown) {
         if (isRateLimitError(error)) {
             const retryAfter = error.rateLimits.RetryAfter;
-            console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds');
+            console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds during getMasterLeague');
             await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
             return getMasterLeague(region);
         } else {
@@ -148,7 +148,7 @@ export async function getMatchList(puuid: string, region: Regions, matchCount: n
     } catch (error: unknown) {
         if (isRateLimitError(error)) {
             const retryAfter = error.rateLimits.RetryAfter;
-            console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds');
+            console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds during getMatchList');
             await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
             return getMatchList(puuid, region, matchCount);
         } else {
@@ -176,7 +176,7 @@ export async function getMatch(matchId: string, region: Regions): Promise<MatchT
     } catch (error: unknown) {
         if (isRateLimitError(error)) {
             const retryAfter = error.rateLimits.RetryAfter;
-            console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds');
+            console.log('Rate limit exceeded, retrying after ' + retryAfter + ' seconds during getMatch');
             await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
             return getMatch(matchId, region);
         } else {
