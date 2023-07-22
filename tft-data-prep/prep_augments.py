@@ -15,27 +15,5 @@ def main():
     client = MongoClient(uri, server_api=ServerApi('1'))
     print("Connected!")
 
-
-    print("Creating game_versions collection...")
-    result = client['ruffys-feuerstelle']['tftmatches'].aggregate([
-        {
-            '$group': {
-                '_id': '$info.game_version', 
-                'count': {
-                    '$sum': 1
-                }, 
-                'earliest_date': {
-                    '$min': '$info.game_datetime'
-                }, 
-                'latest_date': {
-                    '$max': '$info.game_datetime'
-                }
-            }
-        }, {
-            '$out': 'game_versions'
-        }
-    ])
-    print("Done!")
-
 if __name__ == "__main__":
     main()
