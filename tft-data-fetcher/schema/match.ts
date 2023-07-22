@@ -65,6 +65,6 @@ export interface Metadata {
 
 
 // Define a schema and model for your data
-const TFTMatchSchema = new Schema({}, { _id: false, strict: false }); // flexible schema to accommodate any data structure from the Riot API
+const TFTMatchSchema = new Schema({ _id: Schema.Types.ObjectId, }, { _id: false, strict: false }); // flexible schema to accommodate any data structure from the Riot API
 export const TFTMatch = mongoose.model<IMatch>('TFTMatch', TFTMatchSchema);
 
