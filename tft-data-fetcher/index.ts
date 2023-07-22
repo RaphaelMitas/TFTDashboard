@@ -96,9 +96,21 @@ async function fetchDataForSummoner(summoner: ISummoner, region: Regions) {
 // fetchAndSaveData(Constants.Regions.AMERICA_NORTH);
 
 
+/**
+ * As per RIOT Api:
+ * - The AMERICAS routing value serves NA, BR, LAN and LAS.
+ * - The ASIA routing value serves KR and JP
+ * - The EUROPE routing value serves EUNE, EUW, TR, and RU.
+ * - The SEA routing value serves OCE
+ * 
+ * Because api limits are per region group, we need to fetch data from each region group separately.
+ * 
+ */
 // Fetch and save data from Riot API every day
 schedule.scheduleJob('0 * * * *', () => fetchAndSaveData(Constants.Regions.EU_WEST));
+schedule.scheduleJob('15 * * * *', () => fetchAndSaveData(Constants.Regions.KOREA));
 schedule.scheduleJob('30 * * * *', () => fetchAndSaveData(Constants.Regions.AMERICA_NORTH));
+schedule.scheduleJob('45 * * * *', () => fetchAndSaveData(Constants.Regions.OCEANIA));
 
 
 const PORT = process.env.PORT || 5000;
