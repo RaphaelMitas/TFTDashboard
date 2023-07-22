@@ -7,6 +7,8 @@ import { TFTMatch } from './schema/match';
 import mongoose from 'mongoose';
 import { LeagueItemDTO } from 'twisted/dist/models-dto';
 import schedule from 'node-schedule';
+import { Regions } from 'twisted/dist/constants';
+import e from 'express';
 
 
 
@@ -25,79 +27,78 @@ const MONGO_DB_PASSWORD = process.env.MONGO_DB_PASSWORD as string; // Your Riot 
     }
 })();
 
-
-async function fetchAndSaveData() {
+async function fetchAndSaveData(region: Regions) {
     console.log('Fetching data from Riot API...');
 
-    // Fetch all summoner names in Grandmaster and Challenger
-    // const entry = await api.League.getChallengerLeague(Constants.Regions.EU_WEST);
-
-    console.log('Start fetching data from Challenger League...');
-    const challengerLeague = await getChallengerLeague(Constants.Regions.EU_WEST);
+    console.log(`Start fetching data from Challenger League in ${region}...`);
+    const challengerLeague = await getChallengerLeague(region);
     for (let i = 0; i < challengerLeague.length; i += 3) {
-        await fetchPuuidFromLeagueItemDTO(challengerLeague[i]);
+        await fetchPuuidFromLeagueItemDTO(challengerLeague[i], region);
     }
-    console.log('Done fetching Challenger data from Riot API.');
+    console.log(`Done fetching Challenger data from Riot API in ${region}.`);
 
-    console.log('Start fetching data from Grandmaster League...');
-    const grandmasterLeague = await getGrandMasterLeague(Constants.Regions.EU_WEST);
+    console.log(`Start fetching data from Grandmaster League in ${region}...`);
+    const grandmasterLeague = await getGrandMasterLeague(region);
     for (let i = 0; i < grandmasterLeague.length; i += 3) {
-        await fetchPuuidFromLeagueItemDTO(grandmasterLeague[i]);
+        await fetchPuuidFromLeagueItemDTO(grandmasterLeague[i], region);
     }
-    console.log('Done fetching Grandmaster data from Riot API.');
+    console.log(`Done fetching Grandmaster data from Riot API in ${region}.`);
 
-    console.log('Start fetching data from Master League...');
-    const masterLeague = await getMasterLeague(Constants.Regions.EU_WEST);  // This line had an error, it should be getMasterLeague not getGrandMasterLeague.
+    console.log(`Start fetching data from Master League in ${region}...`);
+    const masterLeague = await getMasterLeague(region);
     for (let i = 0; i < masterLeague.length; i += 3) {
-        await fetchPuuidFromLeagueItemDTO(masterLeague[i]);
+        await fetchPuuidFromLeagueItemDTO(masterLeague[i], region);
     }
-    console.log('Done fetching Master data from Riot API.');
-
-
+    console.log(`Done fetching Master data from Riot API in ${region}.`);
 }
 
-async function fetchPuuidFromLeagueItemDTO(summoner: LeagueItemDTO) {
+async function fetchPuuidFromLeagueItemDTO(summoner: LeagueItemDTO, region: Regions) {
     try {
-        const summonerObject = await getPuuidByNames({ summoner: summoner, region: Constants.Regions.EU_WEST });
+        // Check if summoner exists in MongoDB
+        const existingSummoner: ISummoner | null = await Summoner.findOne({ id: summoner.summonerId }); // Replace 'summonerName' with the appropriate field in your Summoner schema
 
+        if (!existingSummoner) {
+            // Summoner does not exist in MongoDB, fetch and update data
+            const summonerObject = await getPuuidByNames({ summoner: summoner, region: region });
 
-        // findOneAndUpdate with upsert option
-        await Summoner.findOneAndUpdate({ id: summonerObject.id }, summonerObject, {
-            new: true, // return the new doc if one is upserted
-            upsert: true // make this update into an upsert
-        });
+            await Summoner.findOneAndUpdate({ id: summonerObject.id }, summonerObject, {
+                new: true,
+                upsert: true
+            });
 
-        fetchDataForSummoner(summonerObject);
+            fetchDataForSummoner(summonerObject, region);
+        } else {
+            fetchDataForSummoner(existingSummoner, region);
+        }
     } catch (error) {
         console.log('Error while fetching PUUID from LeagueItemDTO:', error);
     }
 }
 
-async function fetchDataForSummoner(summoner: ISummoner) {
-    const matchIdList = await getMatchList(summoner.puuid, Constants.Regions.EU_WEST, 2)
+
+async function fetchDataForSummoner(summoner: ISummoner, region: Regions) {
+    const matchIdList = await getMatchList(summoner.puuid, region, 2)
 
     for (const matchId of matchIdList) {
-        // Check if match already exists in MongoDB
         const existingMatch = await TFTMatch.findOne({ "metadata.match_id": matchId });
 
-
         if (!existingMatch) {
-            // If the match does not exist, fetch it and save it
             console.log('Fetching match with ID ' + matchId + ' from Riot API...');
-
-            const match = await getMatch(matchId, Constants.Regions.EU_WEST);
+            const match = await getMatch(matchId, region);
             const matchObject = new TFTMatch({ _id: new mongoose.Types.ObjectId(), ...match });
             await matchObject.save();
-
         }
     }
 }
 
+// Call fetchAndSaveData function for each region
+// fetchAndSaveData(Constants.Regions.EU_WEST);
+// fetchAndSaveData(Constants.Regions.AMERICA_NORTH);
 
-// fetchAndSaveData();
 
 // Fetch and save data from Riot API every day
-schedule.scheduleJob('0 * * * *', fetchAndSaveData);
+schedule.scheduleJob('0 * * * *', () => fetchAndSaveData(Constants.Regions.EU_WEST));
+schedule.scheduleJob('30 * * * *', () => fetchAndSaveData(Constants.Regions.AMERICA_NORTH));
 
 
 const PORT = process.env.PORT || 5000;
