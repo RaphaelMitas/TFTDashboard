@@ -93,9 +93,6 @@ export default async function AugmentPage() {
           alignItems: 'center',
         }}
       >
-        <Typography variant="body1" gutterBottom>
-          Augment Page
-        </Typography>
         <AugmentTable augments={Augment.toJSON(augmentData)} />
       </Box>
     </Container>

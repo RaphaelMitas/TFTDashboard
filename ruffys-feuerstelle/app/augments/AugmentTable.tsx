@@ -193,7 +193,7 @@ const Search = styled('div')(({ theme }) => ({
   marginLeft: 0,
   width: '100%',
   [theme.breakpoints.up('sm')]: {
-    marginLeft: theme.spacing(3),
+    marginLeft: theme.spacing(0),
     width: 'auto',
   },
 }));
@@ -223,15 +223,18 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 interface EnhancedTableToolbarProps {
-  augmentQualityState: {
+  checkBoxState: {
     silver: boolean;
     gold: boolean;
     prismatic: boolean;
+    min50games: boolean;
   };
-  handleAugmentQualityChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  handleCheckBoxChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  search: string;
+  handleSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-function EnhancedTableToolbar({ augmentQualityState, handleAugmentQualityChange }: EnhancedTableToolbarProps) {
+function EnhancedTableToolbar({ checkBoxState, handleCheckBoxChange, search, handleSearchChange }: EnhancedTableToolbarProps) {
   return (
     <Toolbar
       sx={{
@@ -241,7 +244,11 @@ function EnhancedTableToolbar({ augmentQualityState, handleAugmentQualityChange 
         //   alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
       }}
     >
-      <FormGroup row >
+      <FormGroup row sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        width: '100%',
+      }} >
         <Search>
           <SearchIconWrapper>
             <SearchIcon />
@@ -249,11 +256,16 @@ function EnhancedTableToolbar({ augmentQualityState, handleAugmentQualityChange 
           <StyledInputBase
             placeholder="Search…"
             inputProps={{ 'aria-label': 'search' }}
+            value={search}
+            onChange={handleSearchChange}
           />
         </Search>
-        <FormControlLabel control={<Checkbox checked={augmentQualityState.silver} onChange={handleAugmentQualityChange} name='silver' />} label="Silver" />
-        <FormControlLabel control={<Checkbox checked={augmentQualityState.gold} onChange={handleAugmentQualityChange} name='gold' />} label="Gold" />
-        <FormControlLabel control={<Checkbox checked={augmentQualityState.prismatic} onChange={handleAugmentQualityChange} name='prismatic' />} label="Prismatic" />
+        <div>
+          <FormControlLabel disabled control={<Checkbox checked={checkBoxState.silver} onChange={handleCheckBoxChange} name='silver' />} label="Silver" />
+          <FormControlLabel disabled control={<Checkbox checked={checkBoxState.gold} onChange={handleCheckBoxChange} name='gold' />} label="Gold" />
+          <FormControlLabel disabled control={<Checkbox checked={checkBoxState.prismatic} onChange={handleCheckBoxChange} name='prismatic' />} label="Prismatic" />
+        </div>
+        <FormControlLabel control={<Checkbox checked={checkBoxState.min50games} onChange={handleCheckBoxChange} name='min50games' />} label="Min 50 Games" />
       </FormGroup>
     </Toolbar>
   );
@@ -262,6 +274,13 @@ function EnhancedTableToolbar({ augmentQualityState, handleAugmentQualityChange 
 export default function AugmentTable({ augments }: { augments: DataDragonAugment[] }) {
   const [order, setOrder] = React.useState<Order>('desc');
   const [orderBy, setOrderBy] = React.useState<keyof Data>('games');
+  const [search, setSearch] = React.useState<string>('');
+  const [checkBoxState, setCheckBoxState] = React.useState({
+    silver: false,
+    gold: false,
+    prismatic: false,
+    min50games: false,
+  });
 
   const rows = augments.map((augment) => {
     return createData({
@@ -288,28 +307,35 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
   };
 
 
-  const [augmentQualityState, setAugmentQualityState] = React.useState({
-    silver: false,
-    gold: false,
-    prismatic: false,
-  });
 
-  const handleAugmentQualityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setAugmentQualityState({
-      ...augmentQualityState,
+  const handleCheckBoxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setCheckBoxState({
+      ...checkBoxState,
       [event.target.name]: event.target.checked,
     });
   };
-  const sortedRows = React.useMemo(
-    () => rows.sort(getComparator(order, orderBy)),
-    [order, orderBy],
-  );
 
+  const sortedRows = React.useMemo(() => {
+    return rows
+      .filter((row) => {
+        return row.augment.toLowerCase().includes(search.toLowerCase());
+      })
+      .sort(getComparator(order, orderBy));
+  }, [order, orderBy, search]);
+
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(event.target.value)
+  }
 
   return (
     <Box sx={{ width: '100%' }}>
       <Paper sx={{ width: '100%', mb: 2, p: 2, }}>
-        <EnhancedTableToolbar augmentQualityState={augmentQualityState} handleAugmentQualityChange={handleAugmentQualityChange} />
+        <EnhancedTableToolbar
+          checkBoxState={checkBoxState}
+          handleCheckBoxChange={handleCheckBoxChange}
+          search={search}
+          handleSearchChange={handleSearchChange} />
         <TableContainer >
           <Table
             sx={{ minWidth: 750 }}
@@ -323,7 +349,11 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
             />
             <TableBody >
               {sortedRows.map((row, index) => {
-
+                if (checkBoxState.min50games) {
+                  if (row.games < 50) {
+                    return null
+                  }
+                }
                 return (
                   <TableRow
                     hover
