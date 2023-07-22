@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { Constants } from 'twisted';
 import { ISummoner, Summoner } from './schema/summoner';
-import { getChallengerLeagueWithLimiter, getGrandMasterLeagueWithLimiter, getMatchListWithLimiter, getMatchWithLimiter, getPuuidByNamesWithLimiter } from './utility';
+import { getChallengerLeague, getGrandMasterLeague, getMatchList, getMatch, getPuuidByNames } from './utility';
 import { TFTMatch } from './schema/match';
 import mongoose from 'mongoose';
 import { LeagueItemDTO } from 'twisted/dist/models-dto';
@@ -33,21 +33,21 @@ async function fetchAndSaveData() {
     // const entry = await api.League.getChallengerLeague(Constants.Regions.EU_WEST);
 
     console.log('Start fetching data from Challenger League...');
-    const challengerLeague = await getChallengerLeagueWithLimiter(Constants.Regions.EU_WEST);
+    const challengerLeague = await getChallengerLeague(Constants.Regions.EU_WEST);
     for (const summoner of challengerLeague) {
         await fetchPuuidFromLeagueItemDTO(summoner);
     }
     console.log('Done fetching Challenger data from Riot API.');
 
     console.log('Start fetching data from Grandmaster League...');
-    const grandmasterLeague = await getGrandMasterLeagueWithLimiter(Constants.Regions.EU_WEST);
+    const grandmasterLeague = await getGrandMasterLeague(Constants.Regions.EU_WEST);
     for (const summoner of grandmasterLeague) {
         await fetchPuuidFromLeagueItemDTO(summoner);
     }
     console.log('Done fetching Grandmaster data from Riot API.');
 
     console.log('Start fetching data from Master League...');
-    const masterLeague = await getGrandMasterLeagueWithLimiter(Constants.Regions.EU_WEST);
+    const masterLeague = await getGrandMasterLeague(Constants.Regions.EU_WEST);
     for (const summoner of masterLeague) {
         await fetchPuuidFromLeagueItemDTO(summoner);
     }
@@ -57,7 +57,7 @@ async function fetchAndSaveData() {
 
 async function fetchPuuidFromLeagueItemDTO(summoner: LeagueItemDTO) {
     try {
-        const summonerObject = await getPuuidByNamesWithLimiter({ summoner: summoner, region: Constants.Regions.EU_WEST });
+        const summonerObject = await getPuuidByNames({ summoner: summoner, region: Constants.Regions.EU_WEST });
 
 
         // findOneAndUpdate with upsert option
@@ -73,10 +73,10 @@ async function fetchPuuidFromLeagueItemDTO(summoner: LeagueItemDTO) {
 }
 
 async function fetchDataForSummoner(summoner: ISummoner) {
-    const matchIdList = await getMatchListWithLimiter(summoner.puuid, Constants.Regions.EU_WEST, 2)
+    const matchIdList = await getMatchList(summoner.puuid, Constants.Regions.EU_WEST, 2)
 
     for (const matchId of matchIdList) {
-        const match = await getMatchWithLimiter(matchId, Constants.Regions.EU_WEST);
+        const match = await getMatch(matchId, Constants.Regions.EU_WEST);
         const matchObject = new TFTMatch(match);
 
         await TFTMatch.findOneAndUpdate({ id: matchObject.metadata.match_id }, matchObject, {
