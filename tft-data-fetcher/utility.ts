@@ -36,7 +36,7 @@ interface PuuidByNamesProps {
     region: Regions,
 }
 
-async function getPuuidByNames({ summoner, region }: PuuidByNamesProps): Promise<ISummoner> {
+export async function getPuuidByNames({ summoner, region }: PuuidByNamesProps): Promise<ISummoner> {
     try {
         const summonerWithPUUID = await api.Summoner.getById(summoner.summonerId, region);
 
@@ -63,7 +63,7 @@ async function getPuuidByNames({ summoner, region }: PuuidByNamesProps): Promise
     }
 }
 
-export function getPuuidByNamesWithLimiter({ summoner, region }: PuuidByNamesProps): Promise<ISummoner> {
+function getPuuidByNamesWithLimiter({ summoner, region }: PuuidByNamesProps): Promise<ISummoner> {
     return getPuuidByNames({ summoner: summoner, region: region });
 }
 
@@ -71,7 +71,7 @@ export function getPuuidByNamesWithLimiter({ summoner, region }: PuuidByNamesPro
 // Get challenger, grandmaster and master league
 //
 
-async function getChallengerLeague(region: Regions): Promise<LeagueItemDTO[]> {
+export async function getChallengerLeague(region: Regions): Promise<LeagueItemDTO[]> {
     try {
         const challengerLeague = await api.League.getChallengerLeague(region);
         return challengerLeague.response.entries;
@@ -88,11 +88,11 @@ async function getChallengerLeague(region: Regions): Promise<LeagueItemDTO[]> {
     }
 }
 
-export function getChallengerLeagueWithLimiter(region: Regions): Promise<LeagueItemDTO[]> {
+function getChallengerLeagueWithLimiter(region: Regions): Promise<LeagueItemDTO[]> {
     return getChallengerLeague(region);
 }
 
-async function getGrandMasterLeague(region: Regions): Promise<LeagueItemDTO[]> {
+export async function getGrandMasterLeague(region: Regions): Promise<LeagueItemDTO[]> {
     try {
         const grandmasterLeague = await api.League.getGrandMasterLeague(region);
         return grandmasterLeague.response.entries;
@@ -109,11 +109,11 @@ async function getGrandMasterLeague(region: Regions): Promise<LeagueItemDTO[]> {
     }
 }
 
-export function getGrandMasterLeagueWithLimiter(region: Regions): Promise<LeagueItemDTO[]> {
+function getGrandMasterLeagueWithLimiter(region: Regions): Promise<LeagueItemDTO[]> {
     return getGrandMasterLeague(region);
 }
 
-async function getMasterLeague(region: Regions): Promise<LeagueItemDTO[]> {
+export async function getMasterLeague(region: Regions): Promise<LeagueItemDTO[]> {
     try {
         const masterLeague = await api.League.getMasterLeague(region);
         return masterLeague.response.entries;
@@ -130,7 +130,7 @@ async function getMasterLeague(region: Regions): Promise<LeagueItemDTO[]> {
     }
 }
 
-export function getMasterLeagueWithLimiter(region: Regions): Promise<LeagueItemDTO[]> {
+function getMasterLeagueWithLimiter(region: Regions): Promise<LeagueItemDTO[]> {
     return getMasterLeague(region);
 }
 
@@ -139,7 +139,7 @@ export function getMasterLeagueWithLimiter(region: Regions): Promise<LeagueItemD
 // Get match list by PUUID
 //
 
-async function getMatchList(puuid: string, region: Regions, matchCount: number): Promise<string[]> {
+export async function getMatchList(puuid: string, region: Regions, matchCount: number): Promise<string[]> {
     const regionGroup = regionToRegionGroup(region);
 
     try {
@@ -158,7 +158,7 @@ async function getMatchList(puuid: string, region: Regions, matchCount: number):
     }
 }
 
-export function getMatchListWithLimiter(puuid: string, region: Regions, matchCount: number): Promise<string[]> {
+function getMatchListWithLimiter(puuid: string, region: Regions, matchCount: number): Promise<string[]> {
     return getMatchList(puuid, region, matchCount);
 }
 
@@ -167,7 +167,7 @@ export function getMatchListWithLimiter(puuid: string, region: Regions, matchCou
 // Get match by match ID
 //
 
-async function getMatch(matchId: string, region: Regions): Promise<MatchTFTDTO> {
+export async function getMatch(matchId: string, region: Regions): Promise<MatchTFTDTO> {
     const regionGroup = regionToRegionGroup(region);
 
     try {
@@ -186,7 +186,7 @@ async function getMatch(matchId: string, region: Regions): Promise<MatchTFTDTO> 
     }
 }
 
-export function getMatchWithLimiter(matchId: string, region: Regions): Promise<MatchTFTDTO> {
+function getMatchWithLimiter(matchId: string, region: Regions): Promise<MatchTFTDTO> {
     return getMatch(matchId, region);
 }
 
