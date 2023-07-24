@@ -20,7 +20,9 @@ const DO_MONGO_DB_CONNECTION_STRING = process.env.DO_MONGO_DB_CONNECTION_STRING 
 const DO_MONGO_DB_PASSWORD = process.env.DO_MONGO_DB_PASSWORD as string;
 const DO_MONGO_DB_USER = process.env.DO_MONGO_DB_USER as string;
 
+
 // Set up MongoDB connection
+console.log('Connecting to MongoDB...');
 (async () => {
     try {
         await mongoose.connect(`mongodb+srv://${DO_MONGO_DB_USER}:${DO_MONGO_DB_PASSWORD}@${DO_MONGO_DB_CONNECTION_STRING}`);
@@ -108,13 +110,16 @@ async function fetchDataForSummoner(summoner: ISummoner, region: Regions) {
  * Because api limits are per region group, we need to fetch data from each region group separately.
  * 
  */
-// Fetch and save data from Riot API every day
+
+// Fetch and save data from Riot API every 15 minutes
+console.log('Starting schedule for jobs...');
 schedule.scheduleJob('0 * * * *', () => fetchAndSaveData(Constants.Regions.EU_WEST));
 schedule.scheduleJob('15 * * * *', () => fetchAndSaveData(Constants.Regions.KOREA));
 schedule.scheduleJob('30 * * * *', () => fetchAndSaveData(Constants.Regions.AMERICA_NORTH));
 schedule.scheduleJob('45 * * * *', () => fetchAndSaveData(Constants.Regions.OCEANIA));
+console.log('Schedule for jobs started.');
 
 
-const PORT = process.env.PORT || 5000;
+// const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+// app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
