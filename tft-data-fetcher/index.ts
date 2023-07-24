@@ -15,12 +15,15 @@ import e from 'express';
 dotenv.config();
 
 const app = express();
-const MONGO_DB_PASSWORD = process.env.MONGO_DB_PASSWORD as string; // Your Riot API key in a .env file
+
+const DO_MONGO_DB_CONNECTION_STRING = process.env.DO_MONGO_DB_CONNECTION_STRING as string;
+const DO_MONGO_DB_PASSWORD = process.env.DO_MONGO_DB_PASSWORD as string;
+const DO_MONGO_DB_USER = process.env.DO_MONGO_DB_USER as string;
 
 // Set up MongoDB connection
 (async () => {
     try {
-        await mongoose.connect(`mongodb+srv://admin:${MONGO_DB_PASSWORD}@ruffysfeuerstelle.jw6klif.mongodb.net/ruffys-feuerstelle`);
+        await mongoose.connect(`mongodb+srv://${DO_MONGO_DB_USER}:${DO_MONGO_DB_PASSWORD}@${DO_MONGO_DB_CONNECTION_STRING}`);
         console.log('MongoDB connected...');
     } catch (error) {
         console.log(error);
@@ -94,7 +97,6 @@ async function fetchDataForSummoner(summoner: ISummoner, region: Regions) {
 // Call fetchAndSaveData function for each region
 // fetchAndSaveData(Constants.Regions.EU_WEST);
 // fetchAndSaveData(Constants.Regions.AMERICA_NORTH);
-
 
 /**
  * As per RIOT Api:
