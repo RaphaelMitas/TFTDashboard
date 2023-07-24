@@ -11,7 +11,8 @@ import { db } from 'data/mongoDb'
 
 async function getServerSideProps() {
 
-  const data = (await db.collection('augments').find({ game_version: "Version 13.14.520.6878 (Jul 13 2023/19:59:37) [PUBLIC] <Releases/13.14>" }).toArray()) as unknown as MongoAugment[]
+  const data = (await db.collection('augments_view').find({ game_version: "Version 13.14.520.6878 (Jul 13 2023/19:59:37) [PUBLIC] <Releases/13.14>" }).toArray()) as unknown as MongoAugment[]
+
   const mongoData: MongoAugment[] = []
   for await (const augment of data) {
     mongoData.push(augment)
