@@ -47,6 +47,7 @@ export default async function AugmentPage() {
 
       augments.push(new Augment({
         apiName: dragonItem.apiName,
+        augmentQuality: dragonItem.augmentQuality,
         associatedTraits: dragonItem.associatedTraits,
         composition: dragonItem.composition,
         desc: dragonItem.desc,
