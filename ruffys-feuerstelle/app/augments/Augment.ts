@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 
 export interface DataDragonAugmentInterface {
     apiName: string;
+    augmentQuality: string;
     associatedTraits: string[];
     composition: string[];
     desc: null | string;
@@ -17,6 +18,7 @@ export interface DataDragonAugmentInterface {
 
 export class DataDragonAugment {
     apiName: string;
+    augmentQuality: string;
     associatedTraits: string[];
     composition: string[];
     desc: null | string;
@@ -29,6 +31,7 @@ export class DataDragonAugment {
     }
     constructor(augment: DataDragonAugmentInterface) {
         this.apiName = augment.apiName;
+        this.augmentQuality = augment.augmentQuality;
         this.associatedTraits = augment.associatedTraits;
         this.composition = augment.composition;
         this.desc = augment.desc;
@@ -130,6 +133,7 @@ export default class Augment implements DataDragonAugment, MongoAugment {
     win_percent: number;
     top4_percent: number;
     apiName: string;
+    augmentQuality: string;
     associatedTraits: string[];
     composition: string[];
     desc: string | null;
@@ -151,6 +155,7 @@ export default class Augment implements DataDragonAugment, MongoAugment {
         this.win_percent = data.win_percent;
         this.top4_percent = data.top4_percent;
         this.apiName = data.apiName;
+        this.augmentQuality = data.augmentQuality;
         this.associatedTraits = data.associatedTraits;
         this.composition = data.composition;
         this.desc = data.desc;
@@ -175,6 +180,7 @@ export default class Augment implements DataDragonAugment, MongoAugment {
                 win_percent: data.win_percent,
                 top4_percent: data.top4_percent,
                 apiName: data.apiName,
+                augmentQuality: data.augmentQuality,
                 associatedTraits: data.associatedTraits,
                 composition: data.composition,
                 desc: data.desc,

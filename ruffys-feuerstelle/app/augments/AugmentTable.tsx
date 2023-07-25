@@ -21,6 +21,7 @@ import AugmentIcon from 'components/icons/AugmentsIcon';
 
 interface Data {
   augment: string;
+  augmentQuality: string;
   icon: string;
   games: number;
   place: string,
@@ -33,6 +34,7 @@ interface Data {
 
 function createData({
   augment = "",
+  augmentQuality = "uncategorized",
   icon = "",
   games = 0,
   place = "0",
@@ -44,6 +46,7 @@ function createData({
 }): Data {
   return {
     augment,
+    augmentQuality,
     icon,
     games,
     place,
@@ -227,6 +230,7 @@ interface EnhancedTableToolbarProps {
     silver: boolean;
     gold: boolean;
     prismatic: boolean;
+    uncategorized: boolean;
     min50games: boolean;
   };
   handleCheckBoxChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -261,9 +265,10 @@ function EnhancedTableToolbar({ checkBoxState, handleCheckBoxChange, search, han
           />
         </Search>
         <div>
-          <FormControlLabel disabled control={<Checkbox checked={checkBoxState.silver} onChange={handleCheckBoxChange} name='silver' />} label="Silver" />
-          <FormControlLabel disabled control={<Checkbox checked={checkBoxState.gold} onChange={handleCheckBoxChange} name='gold' />} label="Gold" />
-          <FormControlLabel disabled control={<Checkbox checked={checkBoxState.prismatic} onChange={handleCheckBoxChange} name='prismatic' />} label="Prismatic" />
+          <FormControlLabel control={<Checkbox checked={checkBoxState.silver} onChange={handleCheckBoxChange} name='silver' />} label="Silver" />
+          <FormControlLabel control={<Checkbox checked={checkBoxState.gold} onChange={handleCheckBoxChange} name='gold' />} label="Gold" />
+          <FormControlLabel control={<Checkbox checked={checkBoxState.prismatic} onChange={handleCheckBoxChange} name='prismatic' />} label="Prismatic" />
+          <FormControlLabel control={<Checkbox checked={checkBoxState.uncategorized} onChange={handleCheckBoxChange} name='uncategorized' />} label="uncategorized" />
         </div>
         <FormControlLabel control={<Checkbox checked={checkBoxState.min50games} onChange={handleCheckBoxChange} name='min50games' />} label="Min 50 Games" />
       </FormGroup>
@@ -279,12 +284,14 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
     silver: false,
     gold: false,
     prismatic: false,
+    uncategorized: false,
     min50games: false,
   });
 
   const rows = augments.map((augment) => {
     return createData({
       augment: augment.label,
+      augmentQuality: augment.augmentQuality,
       icon: augment.icon,
       games: augment.total_games,
       place: augment.average_placement.toFixed(2),
@@ -293,7 +300,6 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
       at2_1: augment.average_placement_at_stage_2 ? augment.average_placement_at_stage_2.toFixed(2) : '~',
       at3_2: augment.average_placement_at_stage_3 ? augment.average_placement_at_stage_3.toFixed(2) : '~',
       at4_2: augment.average_placement_at_stage_4 ? augment.average_placement_at_stage_4.toFixed(2) : '~',
-
     });
   })
 
@@ -354,6 +360,21 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
                     return null
                   }
                 }
+                if (!(!checkBoxState.silver && !checkBoxState.gold && !checkBoxState.prismatic && !checkBoxState.uncategorized)) {
+                  if (!checkBoxState.silver && row.augmentQuality === 'Silver') {
+                    return null
+                  }
+                  if (!checkBoxState.gold && row.augmentQuality === 'Gold') {
+                    return null
+                  }
+                  if (!checkBoxState.prismatic && row.augmentQuality === 'Prismatic') {
+                    return null
+                  }
+                  if (!checkBoxState.uncategorized && row.augmentQuality === 'uncategorized') {
+                    return null
+                  }
+                }
+
                 return (
                   <TableRow
                     hover

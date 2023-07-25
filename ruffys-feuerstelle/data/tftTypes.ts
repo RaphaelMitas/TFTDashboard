@@ -16,6 +16,7 @@ export interface Item {
     incompatibleTraits: string[];
     name: null | string;
     unique: boolean;
+    augmentQuality: string;
 }
 
 export enum EffectEnum {
