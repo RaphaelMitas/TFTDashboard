@@ -3,3 +3,5 @@
 .netlify
 
 serviceAccountKey.json
+
+.DS_Store
