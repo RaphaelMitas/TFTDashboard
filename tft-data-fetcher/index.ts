@@ -1,36 +1,18 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { Constants } from 'twisted';
-import { ISummoner, Summoner } from './schema/summoner';
+import { ISummoner, getSummonerById, saveSummoner } from './schema/summoner';
 import { getChallengerLeague, getGrandMasterLeague, getMatchList, getMatch, getPuuidByNames, getMasterLeague } from './utility';
-import { TFTMatch } from './schema/match';
-import mongoose from 'mongoose';
-import { LeagueItemDTO } from 'twisted/dist/models-dto';
 import schedule from 'node-schedule';
+import { LeagueItemDTO } from 'twisted/dist/models-dto';
 import { Regions } from 'twisted/dist/constants';
-import e from 'express';
-
+import { getMatchById, isIMatch, saveMatchAndUpdateStats } from './schema/match';
 
 
 dotenv.config();
 
 const app = express();
 
-const DO_MONGO_DB_CONNECTION_STRING = process.env.DO_MONGO_DB_CONNECTION_STRING as string;
-const DO_MONGO_DB_PASSWORD = process.env.DO_MONGO_DB_PASSWORD as string;
-const DO_MONGO_DB_USER = process.env.DO_MONGO_DB_USER as string;
-
-
-// Set up MongoDB connection
-console.log('Connecting to MongoDB...');
-(async () => {
-    try {
-        await mongoose.connect(`mongodb+srv://${DO_MONGO_DB_USER}:${DO_MONGO_DB_PASSWORD}@${DO_MONGO_DB_CONNECTION_STRING}`);
-        console.log('MongoDB connected...');
-    } catch (error) {
-        console.log(error);
-    }
-})();
 
 async function fetchAndSaveData(region: Regions) {
     console.log('Fetching data from Riot API...');
@@ -59,17 +41,14 @@ async function fetchAndSaveData(region: Regions) {
 
 async function fetchPuuidFromLeagueItemDTO(summoner: LeagueItemDTO, region: Regions) {
     try {
-        // Check if summoner exists in MongoDB
-        const existingSummoner: ISummoner | null = await Summoner.findOne({ id: summoner.summonerId }); // Replace 'summonerName' with the appropriate field in your Summoner schema
+        // Check if summoner exists
+        const existingSummoner: ISummoner | null = await getSummonerById(summoner.summonerId); // Replace 'summonerName' with the appropriate field in your Summoner schema
 
         if (!existingSummoner) {
-            // Summoner does not exist in MongoDB, fetch and update data
+            // Summoner does not exist, fetch and update data
             const summonerObject = await getPuuidByNames({ summoner: summoner, region: region });
 
-            await Summoner.findOneAndUpdate({ id: summonerObject.id }, summonerObject, {
-                new: true,
-                upsert: true
-            });
+            await saveSummoner(summonerObject)
 
             fetchDataForSummoner(summonerObject, region);
         } else {
@@ -85,13 +64,16 @@ async function fetchDataForSummoner(summoner: ISummoner, region: Regions) {
     const matchIdList = await getMatchList(summoner.puuid, region, 2)
 
     for (const matchId of matchIdList) {
-        const existingMatch = await TFTMatch.findOne({ "metadata.match_id": matchId });
+        const existingMatch = await getMatchById(matchId);
 
         if (!existingMatch) {
             console.log('Fetching match with ID ' + matchId + ' from Riot API...');
             const match = await getMatch(matchId, region);
-            const matchObject = new TFTMatch({ _id: new mongoose.Types.ObjectId(), ...match });
-            await matchObject.save();
+            if (isIMatch(match)) {
+                await saveMatchAndUpdateStats(match);
+            } else {
+                console.error('Fetched match does not match IMatch interface');
+            }
         }
     }
 }
@@ -99,6 +81,8 @@ async function fetchDataForSummoner(summoner: ISummoner, region: Regions) {
 // Call fetchAndSaveData function for each region
 // fetchAndSaveData(Constants.Regions.EU_WEST);
 // fetchAndSaveData(Constants.Regions.AMERICA_NORTH);
+// fetchAndSaveData(Constants.Regions.KOREA);
+// fetchAndSaveData(Constants.Regions.OCEANIA);
 
 /**
  * As per RIOT Api:
@@ -106,9 +90,9 @@ async function fetchDataForSummoner(summoner: ISummoner, region: Regions) {
  * - The ASIA routing value serves KR and JP
  * - The EUROPE routing value serves EUNE, EUW, TR, and RU.
  * - The SEA routing value serves OCE
- * 
+ *
  * Because api limits are per region group, we need to fetch data from each region group separately.
- * 
+ *
  */
 
 // Fetch and save data from Riot API every 15 minutes
@@ -118,8 +102,3 @@ schedule.scheduleJob('15 * * * *', () => fetchAndSaveData(Constants.Regions.KORE
 schedule.scheduleJob('30 * * * *', () => fetchAndSaveData(Constants.Regions.AMERICA_NORTH));
 schedule.scheduleJob('45 * * * *', () => fetchAndSaveData(Constants.Regions.OCEANIA));
 console.log('Schedule for jobs started.');
-
-
-// const PORT = process.env.PORT || 5000;
-
-// app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

@@ -1,11 +1,10 @@
 // utility.ts
 
 import { Constants, TftApi } from 'twisted';
-import Bottleneck from 'bottleneck';
-import { ISummoner, Summoner } from './schema/summoner';
+import { ISummoner } from './schema/summoner';
 import { LeagueItemDTO, MatchTFTDTO } from 'twisted/dist/models-dto';
 import dotenv from 'dotenv';
-import { RegionGroups, Regions, regionToRegionGroup } from 'twisted/dist/constants';
+import { Regions, regionToRegionGroup } from 'twisted/dist/constants';
 
 dotenv.config();
 const RIOT_API_KEY = process.env.RIOT_API_KEY as string;
@@ -40,14 +39,14 @@ export async function getPuuidByNames({ summoner, region }: PuuidByNamesProps): 
     try {
         const summonerWithPUUID = await api.Summoner.getById(summoner.summonerId, region);
 
-        const summonerObject = new Summoner({
+        const summonerObject: ISummoner = {
             id: summoner.summonerId,
             name: summoner.summonerName,
             accountId: summonerWithPUUID.response.accountId,
             puuid: summonerWithPUUID.response.puuid,
             region: Constants.Regions.EU_WEST,
             tier: Constants.Tiers.CHALLENGER,
-        });
+        };
 
         return summonerObject;
     } catch (error: unknown) {
