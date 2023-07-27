@@ -1,24 +1,30 @@
-import mongoose, { Document, Schema } from 'mongoose';
-import { Constants } from 'twisted';
-import { Regions, Tiers } from 'twisted/dist/constants';
+import { db } from '../database';
 
 
-export interface ISummoner extends Document {
+export interface ISummoner {
     id: string,
     name: string,
     accountId: string,
     puuid: string,
-    region: Regions,
-    tier: Tiers,
+    region: string,
+    tier: string,
 }
 
-const SummonerSchema: Schema = new Schema({
-    id: { type: String, required: true },
-    name: { type: String, required: true },
-    accountId: { type: String, required: true },
-    puuid: { type: String, required: true },
-    region: { type: String, enum: Regions, required: true },
-    tier: { type: String, enum: Tiers, required: true },
-}, { _id: false });
+// A function to save a summoner
+export async function saveSummoner(summoner: ISummoner) {
+    const summonerRef = db.collection('summoners').doc(summoner.id);
+    await summonerRef.set(summoner);
+}
 
-export const Summoner = mongoose.model<ISummoner>('Summoner', SummonerSchema);
+
+// A function to get a summoner by id
+export async function getSummonerById(id: string) {
+    const summonerRef = db.collection('summoners').doc(id);
+    const doc = await summonerRef.get();
+    if (doc.exists) {
+        return doc.data() as ISummoner;
+    } else {
+        return null
+    }
+}
+

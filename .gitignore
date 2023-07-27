@@ -1,3 +1,7 @@
 /.vscode/
 # Local Netlify folder
 .netlify
+
+serviceAccountKey.json
+
+.DS_Store
