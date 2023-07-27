@@ -69,7 +69,12 @@ async function fetchDataForSummoner(summoner: ISummoner, region: Regions) {
         if (!existingMatch) {
             console.log('Fetching match with ID ' + matchId + ' from Riot API...');
             const match = await getMatch(matchId, region);
+
             if (isIMatch(match)) {
+                if (match.info.tft_game_type !== 'standard') {
+                    console.log('Match is not a standard match, skipping...');
+                    continue;
+                }
                 await saveMatchAndUpdateStats(match);
             } else {
                 console.error('Fetched match does not match IMatch interface');

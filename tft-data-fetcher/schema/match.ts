@@ -9,6 +9,7 @@ export interface IParticipant extends ParticipantDTO {
 export interface IMatch extends Omit<MatchTFTDTO, 'info'> {
     info: {
         participants: IParticipant[];
+        tft_game_type: string;
     } & Omit<MatchTFTDTO['info'], 'participants'>;
 }
 
