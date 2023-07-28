@@ -398,7 +398,7 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
                         {row.augment}
                       </Box>
                     </TableCell>
-                    <TableCell align="right">{row.games}</TableCell>
+                    <TableCell align="right">{row.games >= 10000 ? `${(row.games / 100).toFixed()}K` : row.games}</TableCell>
                     <TableCell align="right">{row.place}</TableCell>
                     <TableCell align="right">{row.top4}</TableCell>
                     <TableCell align="right">{row.win}</TableCell>

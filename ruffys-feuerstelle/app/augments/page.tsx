@@ -20,49 +20,58 @@ async function getServerSideProps() {
   const data: DBAugment[] = []
   let currentAugment: DBAugment | null = null
   for await (const augment of firebaseData) {
-    if (currentAugment && currentAugment.augment !== augment.augment) {
+    // save augment
+    if (currentAugment !== null && currentAugment.augment !== augment.augment) {
       currentAugment.average_placement = currentAugment.total_placement / currentAugment.total_games
       currentAugment.top4_percent = currentAugment.placement_1_to_4 / currentAugment.total_games
       currentAugment.win_percent = currentAugment.wins / currentAugment.total_games
 
       data.push(currentAugment)
       currentAugment = null
-    } else {
-      if (!currentAugment) {
-        currentAugment = new DBAugment({
-          augment: augment.augment,
-          game_version: augment.game_version,
-          average_placement_at_stage_2: augment.augment_at_stage === 2 ? augment.average_placement_at_stage : 0,
-          average_placement_at_stage_3: augment.augment_at_stage === 3 ? augment.average_placement_at_stage : 0,
-          average_placement_at_stage_4: augment.augment_at_stage === 4 ? augment.average_placement_at_stage : 0,
-          total_games: augment.total_games,
-          total_placement: augment.total_placement,
-          average_placement: 0,
-          placement_1_to_4: augment.games_with_placement_1_to_4,
-          top4_percent: 0,
-          wins: augment.wins,
-          win_percent: 0,
-        })
-      } else {
-        currentAugment = new DBAugment({
-          augment: augment.augment,
-          game_version: augment.game_version,
-          average_placement_at_stage_2: augment.augment_at_stage === 2 ? augment.average_placement_at_stage : currentAugment.average_placement_at_stage_2,
-          average_placement_at_stage_3: augment.augment_at_stage === 3 ? augment.average_placement_at_stage : currentAugment.average_placement_at_stage_3,
-          average_placement_at_stage_4: augment.augment_at_stage === 4 ? augment.average_placement_at_stage : currentAugment.average_placement_at_stage_4,
-          total_games: currentAugment.total_games + augment.total_games,
-          total_placement: currentAugment.total_placement + augment.total_placement,
-          average_placement: 0,
-          placement_1_to_4: currentAugment.placement_1_to_4 + augment.games_with_placement_1_to_4,
-          top4_percent: 0,
-          wins: currentAugment.wins + augment.wins,
-          win_percent: 0,
-        })
-      }
     }
 
-
+    if (currentAugment === null) {
+      currentAugment = new DBAugment({
+        augment: augment.augment,
+        game_version: augment.game_version,
+        average_placement_at_stage_2: augment.augment_at_stage === 2 ? augment.average_placement_at_stage : 0,
+        average_placement_at_stage_3: augment.augment_at_stage === 3 ? augment.average_placement_at_stage : 0,
+        average_placement_at_stage_4: augment.augment_at_stage === 4 ? augment.average_placement_at_stage : 0,
+        total_games: augment.total_games,
+        total_placement: augment.total_placement,
+        average_placement: 0,
+        placement_1_to_4: augment.games_with_placement_1_to_4,
+        top4_percent: 0,
+        wins: augment.wins,
+        win_percent: 0,
+      })
+    } else {
+      currentAugment = new DBAugment({
+        augment: augment.augment,
+        game_version: augment.game_version,
+        average_placement_at_stage_2: augment.augment_at_stage === 2 ? augment.average_placement_at_stage : currentAugment.average_placement_at_stage_2,
+        average_placement_at_stage_3: augment.augment_at_stage === 3 ? augment.average_placement_at_stage : currentAugment.average_placement_at_stage_3,
+        average_placement_at_stage_4: augment.augment_at_stage === 4 ? augment.average_placement_at_stage : currentAugment.average_placement_at_stage_4,
+        total_games: currentAugment.total_games + augment.total_games,
+        total_placement: currentAugment.total_placement + augment.total_placement,
+        average_placement: 0,
+        placement_1_to_4: currentAugment.placement_1_to_4 + augment.games_with_placement_1_to_4,
+        top4_percent: 0,
+        wins: currentAugment.wins + augment.wins,
+        win_percent: 0,
+      })
+    }
   }
+
+  // save last augment
+  if (currentAugment !== null) {
+    currentAugment.average_placement = currentAugment.total_placement / currentAugment.total_games
+    currentAugment.top4_percent = currentAugment.placement_1_to_4 / currentAugment.total_games
+    currentAugment.win_percent = currentAugment.wins / currentAugment.total_games
+
+    data.push(currentAugment)
+  }
+
 
   const dragonData: any = tftJSON
   return { dragonData, data }
