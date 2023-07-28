@@ -94,3 +94,81 @@ export async function saveMatchAndUpdateStats(match: IMatch) {
         }
     });
 }
+
+/**
+ * delete old matches 
+ * @param olderThanDays number of days
+ */
+export async function deleteOldMatches(olderThanDays: number) {
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - (olderThanDays * 24 * 60 * 60 * 1000));
+    console.log(`Starting to delete matches older than ${cutoff} ...`)
+
+    const Query = db.collection('tftmatches').orderBy('info.game_datetime');
+    const snapshot = await Query.limit(1).get();
+    let currentMatch = snapshot.docs[0].data() as IMatch;
+    let countDeletions = 0;
+    let countAugmentDeletions = 0;
+
+    console.log(`currentMatch.info.game_datetime: ${currentMatch.info.game_datetime}, cutoff: ${cutoff.getTime()}`)
+
+    while (currentMatch.info.game_datetime < cutoff.getTime()) {
+        await db.runTransaction(async (transaction) => {
+            const matchRef = db.collection('tftmatches').doc(currentMatch.metadata.match_id);
+            transaction.delete(matchRef);
+            countDeletions++;
+            if (countDeletions % 100 === 0) {
+                console.log(`Deleted ${countDeletions} matches so far...`);
+            }
+
+            const participants = currentMatch.info.participants;
+            for (const participant of participants) {
+                for (let i = 0; i < participant.augments.length; i++) {
+                    const augment = participant.augments[i];
+                    const game_version = currentMatch.info.game_version;
+                    const augmentStatsCollection = db.collection('augmentStats');
+                    const augmentStatsSnapshot = await augmentStatsCollection.where('augment', '==', augment)
+                        .where('augment_at_stage', '==', i + 2)
+                        .where('game_version', '==', game_version)
+                        .get();
+
+                    if (!augmentStatsSnapshot.empty) {
+                        //if total_games is 1, delete the document
+                        if (augmentStatsSnapshot.docs[0].data().total_games <= 1) {
+                            transaction.delete(augmentStatsSnapshot.docs[0].ref);
+                            countAugmentDeletions++;
+                            if (countAugmentDeletions % 100 === 0) {
+                                console.log(`Deleted ${countAugmentDeletions} augment stats so far...`);
+                            }
+                        } else {
+
+                            // Document exists, update it
+                            const doc = augmentStatsSnapshot.docs[0];
+                            const stats = doc.data() as IAugmentStats;
+                            transaction.set(doc.ref, {
+                                augment: stats.augment,
+                                augment_at_stage: stats.augment_at_stage,
+                                game_version: stats.game_version,
+                                total_games: stats.total_games - 1,
+                                wins: stats.wins - (participant.placement === 1 ? 1 : 0),
+                                games_with_placement_1_to_4: stats.games_with_placement_1_to_4 -
+                                    (participant.placement >= 1 && participant.placement <= 4 ? 1 : 0),
+                                total_placement: stats.total_placement - participant.placement,
+                                average_placement_at_stage: (stats.total_placement - participant.placement) / (stats.total_games - 1)
+                            });
+                        }
+
+                    }
+                }
+            }
+        });
+        currentMatch = (await Query.limit(1).get()).docs[0].data() as IMatch;
+    }
+
+
+    console.log(`Finished deleting matches older than ${cutoff} ...`)
+    console.log(`Deleted ${countDeletions} matches and ${countAugmentDeletions} augment stats in total.`);
+
+
+}
+
