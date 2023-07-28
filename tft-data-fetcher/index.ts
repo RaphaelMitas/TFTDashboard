@@ -6,7 +6,7 @@ import { getChallengerLeague, getGrandMasterLeague, getMatchList, getMatch, getP
 import schedule from 'node-schedule';
 import { LeagueItemDTO } from 'twisted/dist/models-dto';
 import { Regions } from 'twisted/dist/constants';
-import { getMatchById, isIMatch, saveMatchAndUpdateStats } from './schema/match';
+import { deleteOldMatches, getMatchById, isIMatch, saveMatchAndUpdateStats } from './schema/match';
 
 
 dotenv.config();
@@ -106,4 +106,6 @@ schedule.scheduleJob('0 * * * *', () => fetchAndSaveData(Constants.Regions.EU_WE
 schedule.scheduleJob('15 * * * *', () => fetchAndSaveData(Constants.Regions.KOREA));
 schedule.scheduleJob('30 * * * *', () => fetchAndSaveData(Constants.Regions.AMERICA_NORTH));
 schedule.scheduleJob('45 * * * *', () => fetchAndSaveData(Constants.Regions.OCEANIA));
+// delete old matches every day at 04:00
+schedule.scheduleJob('0 4 * * *', () => deleteOldMatches(30));
 console.log('Schedule for jobs started.');
