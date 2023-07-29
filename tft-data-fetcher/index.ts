@@ -31,12 +31,12 @@ async function fetchAndSaveData(region: Regions) {
     }
     console.log(`Done fetching Grandmaster data from Riot API in ${region}.`);
 
-    console.log(`Start fetching data from Master League in ${region}...`);
-    const masterLeague = await getMasterLeague(region);
-    for (let i = 0; i < masterLeague.length; i += 3) {
-        await fetchPuuidFromLeagueItemDTO(masterLeague[i], region);
-    }
-    console.log(`Done fetching Master data from Riot API in ${region}.`);
+    // console.log(`Start fetching data from Master League in ${region}...`);
+    // const masterLeague = await getMasterLeague(region);
+    // for (let i = 0; i < masterLeague.length; i += 3) {
+    //     await fetchPuuidFromLeagueItemDTO(masterLeague[i], region);
+    // }
+    // console.log(`Done fetching Master data from Riot API in ${region}.`);
 }
 
 async function fetchPuuidFromLeagueItemDTO(summoner: LeagueItemDTO, region: Regions) {
