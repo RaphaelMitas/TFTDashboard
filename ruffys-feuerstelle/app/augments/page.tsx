@@ -11,7 +11,7 @@ async function getServerSideProps() {
 
   const firebaseDb = admin.firestore()
   const firebaseData = (await firebaseDb.collection('augmentStats')
-    .where("game_version", "==", "Version 13.14.520.6878 (Jul 13 2023/19:59:37) [PUBLIC] <Releases/13.14>")
+    .where("game_version", "==", "Version 13.14.522.7601 (Jul 26 2023/16:00:35) [PUBLIC] <Releases/13.14>")
     .orderBy("augment", "asc")
     .orderBy("augment_at_stage", "asc")
     .withConverter(firebaseAugmentStatsConverter)
