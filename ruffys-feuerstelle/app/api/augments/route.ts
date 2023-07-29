@@ -112,6 +112,9 @@ async function getFirebaseAugmentStats() {
 
 export async function GET(request: NextRequest) {
     const secret = request.nextUrl.searchParams.get("secret");
+    console.log('secret: ', secret)
+    console.log('process.env.SERVER_SECRET: ', process.env.SERVER_SECRET)
+
 
     // prevent unauthorized access
     if (process.env.SERVER_SECRET !== secret) {
