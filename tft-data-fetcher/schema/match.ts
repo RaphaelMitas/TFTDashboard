@@ -47,10 +47,14 @@ export async function getMatchById(id: string) {
 /**
  * Save match to firestore and update augment stats
  */
-const matchBuffer: IMatch[] = [];
+let matchBuffer: IMatch[] = [];
 const augmentStatsBuffer: { [key: string]: IAugmentStats } = {};
+let isWritingToFirestore = false;
 
 export async function saveMatchAndUpdateStats(match: IMatch) {
+    while (isWritingToFirestore) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
     // Push the match to the buffer
     matchBuffer.push(match);
 
@@ -90,6 +94,8 @@ export async function saveMatchAndUpdateStats(match: IMatch) {
 }
 
 async function writeToFirestore() {
+    isWritingToFirestore = true; // Set the flag
+
     console.log('Starting to write to Firestore...');
 
     for (const match of matchBuffer) {
@@ -124,10 +130,12 @@ async function writeToFirestore() {
     }
 
     // Clear the buffers
-    matchBuffer.length = 0;
+    matchBuffer = [];
     Object.keys(augmentStatsBuffer).forEach((key) => delete augmentStatsBuffer[key]);
 
     console.log('Finished writing to Firestore.');
+
+    isWritingToFirestore = false; // Clear the flag
 }
 
 
