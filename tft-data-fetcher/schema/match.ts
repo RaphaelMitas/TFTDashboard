@@ -43,56 +43,99 @@ export async function getMatchById(id: string) {
         return null
     }
 }
+
+/**
+ * Save match to firestore and update augment stats
+ */
+const matchBuffer: IMatch[] = [];
+const augmentStatsBuffer: { [key: string]: IAugmentStats } = {};
+
 export async function saveMatchAndUpdateStats(match: IMatch) {
-    await db.runTransaction(async (transaction) => {
-        const matchRef = db.collection('tftmatches').doc(match.metadata.match_id);
+    // Push the match to the buffer
+    matchBuffer.push(match);
 
-        transaction.set(matchRef, match);
+    console.log(`Matches in buffer: ${matchBuffer.length}`);
 
-        const participants = match.info.participants;
-        for (const participant of participants) {
-            for (let i = 0; i < participant.augments.length; i++) {
-                const augment = participant.augments[i];
-                const game_version = match.info.game_version;
-                const augmentStatsCollection = db.collection('augmentStats');
-                const augmentStatsSnapshot = await augmentStatsCollection.where('augment', '==', augment)
-                    .where('augment_at_stage', '==', i + 2)
-                    .where('game_version', '==', game_version)
-                    .get();
-
-                if (!augmentStatsSnapshot.empty) {
-                    // Document exists, update it
-                    const doc = augmentStatsSnapshot.docs[0];
-                    const stats = doc.data() as IAugmentStats;
-                    transaction.set(doc.ref, {
-                        augment: stats.augment,
-                        augment_at_stage: stats.augment_at_stage,
-                        game_version: stats.game_version,
-                        total_games: stats.total_games + 1,
-                        wins: stats.wins + (participant.placement === 1 ? 1 : 0),
-                        games_with_placement_1_to_4: stats.games_with_placement_1_to_4 +
-                            (participant.placement >= 1 && participant.placement <= 4 ? 1 : 0),
-                        total_placement: stats.total_placement + participant.placement,
-                        average_placement_at_stage: (stats.total_placement + participant.placement) / (stats.total_games + 1)
-                    });
-                } else {
-                    // Document does not exist, create it
-                    const newStats: IAugmentStats = {
-                        augment,
-                        augment_at_stage: i + 2,
-                        game_version,
-                        total_games: 1,
-                        wins: participant.placement === 1 ? 1 : 0,
-                        games_with_placement_1_to_4: participant.placement >= 1 && participant.placement <= 4 ? 1 : 0,
-                        total_placement: participant.placement,
-                        average_placement_at_stage: participant.placement
-                    };
-                    const newDocRef = augmentStatsCollection.doc();
-                    transaction.set(newDocRef, newStats);
-                }
+    // Update the augment stats in the buffer
+    const participants = match.info.participants;
+    for (const participant of participants) {
+        for (let i = 0; i < participant.augments.length; i++) {
+            const augment = participant.augments[i];
+            const key = `${augment}-${i + 2}-${match.info.game_version}`;
+            if (!augmentStatsBuffer[key]) {
+                augmentStatsBuffer[key] = {
+                    augment,
+                    augment_at_stage: i + 2,
+                    game_version: match.info.game_version,
+                    total_games: 0,
+                    wins: 0,
+                    games_with_placement_1_to_4: 0,
+                    total_placement: 0,
+                    average_placement_at_stage: 0
+                };
             }
+            const stats = augmentStatsBuffer[key];
+            stats.total_games++;
+            stats.wins += participant.placement === 1 ? 1 : 0;
+            stats.games_with_placement_1_to_4 += participant.placement >= 1 && participant.placement <= 4 ? 1 : 0;
+            stats.total_placement += participant.placement;
+            stats.average_placement_at_stage = stats.total_placement / stats.total_games;
         }
-    });
+    }
+
+    // If buffer reaches 500, write to Firestore
+    if (matchBuffer.length >= 500) {
+        await writeToFirestore();
+    }
+}
+
+async function writeToFirestore() {
+    console.log('Starting to write to Firestore...');
+
+    for (const match of matchBuffer) {
+        const matchRef = db.collection('tftmatches').doc(match.metadata.match_id);
+        await matchRef.set(match);
+    }
+
+    const augmentStatsCollection = db.collection('augmentStats');
+    for (const statsKey in augmentStatsBuffer) {
+        const stats = augmentStatsBuffer[statsKey];
+
+        // Read the existing augment stats from Firestore
+        const augmentStatsSnapshot = await augmentStatsCollection.where('augment', '==', stats.augment)
+            .where('augment_at_stage', '==', stats.augment_at_stage)
+            .where('game_version', '==', stats.game_version)
+            .get();
+
+        // Merge the existing stats with the buffer
+        if (!augmentStatsSnapshot.empty) {
+            const existingStats = augmentStatsSnapshot.docs[0].data() as IAugmentStats;
+            stats.total_games += existingStats.total_games;
+            stats.wins += existingStats.wins;
+            stats.games_with_placement_1_to_4 += existingStats.games_with_placement_1_to_4;
+            stats.total_placement += existingStats.total_placement;
+            stats.average_placement_at_stage = stats.total_placement / stats.total_games;
+
+            await augmentStatsSnapshot.docs[0].ref.set(stats);
+        } else {
+            const newDocRef = augmentStatsCollection.doc();
+            await newDocRef.set(stats);
+        }
+    }
+
+    // Clear the buffers
+    matchBuffer.length = 0;
+    Object.keys(augmentStatsBuffer).forEach((key) => delete augmentStatsBuffer[key]);
+
+    console.log('Finished writing to Firestore.');
+}
+
+
+// You may also want to expose a function to flush the buffer if your application shuts down
+export async function flushBuffer() {
+    if (matchBuffer.length > 0) {
+        await writeToFirestore();
+    }
 }
 
 /**
