@@ -98,10 +98,13 @@ async function writeToFirestore() {
 
     console.log('Starting to write to Firestore...');
 
+    const batch = db.batch(); // Initialize a batched write operation
+
     for (const match of matchBuffer) {
         const matchRef = db.collection('tftmatches').doc(match.metadata.match_id);
-        await matchRef.set(match);
+        batch.set(matchRef, match); // Add the match to the batched write operation
     }
+    await batch.commit(); // Commit the batched write operation to write all the matches to Firestore in a single write operation
 
     const augmentStatsCollection = db.collection('augmentStats');
     for (const statsKey in augmentStatsBuffer) {
