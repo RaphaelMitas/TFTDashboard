@@ -121,6 +121,7 @@ async function writeToFirestore() {
                     .where('game_version', '==', stats.game_version)
                     .get();
 
+                let augmentStatsRef: FirebaseFirestore.DocumentReference;
                 // Merge the existing stats with the buffer
                 if (!augmentStatsSnapshot.empty) {
                     const existingStats = augmentStatsSnapshot.docs[0].data() as IAugmentStats;
@@ -129,10 +130,12 @@ async function writeToFirestore() {
                     stats.games_with_placement_1_to_4 += existingStats.games_with_placement_1_to_4;
                     stats.total_placement += existingStats.total_placement;
                     stats.average_placement_at_stage = stats.total_placement / stats.total_games;
+                    augmentStatsRef = augmentStatsSnapshot.docs[0].ref;
+                } else {
+                    // Add the augment stats to the batched write operation
+                    augmentStatsRef = augmentStatsCollection.doc();
                 }
 
-                // Add the augment stats to the batched write operation
-                const augmentStatsRef = augmentStatsCollection.doc();
                 batch.set(augmentStatsRef, stats); // Add the augment stats to the batched write operation
             }
             await batch.commit(); // Commit the batched write operation to write all the augment stats to Firestore in a single write operation
