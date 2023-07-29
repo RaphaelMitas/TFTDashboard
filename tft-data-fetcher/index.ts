@@ -84,10 +84,10 @@ async function fetchDataForSummoner(summoner: ISummoner, region: Regions) {
 }
 
 // Call fetchAndSaveData function for each region
-// fetchAndSaveData(Constants.Regions.EU_WEST);
-// fetchAndSaveData(Constants.Regions.AMERICA_NORTH);
-// fetchAndSaveData(Constants.Regions.KOREA);
-// fetchAndSaveData(Constants.Regions.OCEANIA);
+fetchAndSaveData(Constants.Regions.EU_WEST);
+fetchAndSaveData(Constants.Regions.AMERICA_NORTH);
+fetchAndSaveData(Constants.Regions.KOREA);
+fetchAndSaveData(Constants.Regions.OCEANIA);
 
 /**
  * As per RIOT Api:
@@ -102,10 +102,10 @@ async function fetchDataForSummoner(summoner: ISummoner, region: Regions) {
 
 // Fetch and save data from Riot API every 15 minutes
 console.log('Starting schedule for jobs...');
-schedule.scheduleJob('0 * * * *', () => fetchAndSaveData(Constants.Regions.EU_WEST));
-schedule.scheduleJob('15 * * * *', () => fetchAndSaveData(Constants.Regions.KOREA));
-schedule.scheduleJob('30 * * * *', () => fetchAndSaveData(Constants.Regions.AMERICA_NORTH));
-schedule.scheduleJob('45 * * * *', () => fetchAndSaveData(Constants.Regions.OCEANIA));
-// delete old matches every day at 04:00
-schedule.scheduleJob('0 4 * * *', () => deleteOldMatches(30));
+// schedule.scheduleJob('0 * * * *', () => fetchAndSaveData(Constants.Regions.EU_WEST));
+// schedule.scheduleJob('15 * * * *', () => fetchAndSaveData(Constants.Regions.KOREA));
+// schedule.scheduleJob('30 * * * *', () => fetchAndSaveData(Constants.Regions.AMERICA_NORTH));
+// schedule.scheduleJob('45 * * * *', () => fetchAndSaveData(Constants.Regions.OCEANIA));
+// // delete old matches every day at 04:00
+// schedule.scheduleJob('0 4 * * *', () => deleteOldMatches(30));
 console.log('Schedule for jobs started.');
