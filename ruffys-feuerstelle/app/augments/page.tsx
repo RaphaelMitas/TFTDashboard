@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 import Augment, { } from './Augment';
 import AugmentTable from './AugmentTable';
 import { getServerSession } from 'next-auth';
-import { authOptions } from 'app/api/auth/[...nextauth]/route';
+import { authOptions } from 'app/api/auth/[...nextauth]/NextAuthOptions';
 import { Typography } from '@mui/material';
 
 export default async function AugmentPage() {
@@ -13,10 +13,7 @@ export default async function AugmentPage() {
   //fetch from local api route
   const res = await fetch(`${process.env.BASE_URL}/api/augments?secret=${process.env.SERVER_SECRET}`, { next: { revalidate: REVALIDATE_AUGMENTS } })
   let data: Augment[] = []
-  if (res.status !== 200) {
-    console.log('Error fetching from local api route')
-  } else {
-    console.log('Successfully fetched from local api route')
+  if (res.status === 200) {
     data = (await res.json() as { augments: Augment[] }).augments
   }
 
