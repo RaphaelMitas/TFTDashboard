@@ -17,6 +17,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import ThemeRegistry from '../styles/ThemeRegistry';
 import AugmentIcon from 'components/icons/AugmentsIcon';
 import NextAuthProvider from './AuthProvider';
+import Login from './Login';
 
 export const metadata = {
   title: 'Ruffys Feuerstelle',
@@ -48,10 +49,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <NextAuthProvider>
             <AppBar position="fixed" sx={{ zIndex: 2000 }}>
               <Toolbar sx={{ backgroundColor: 'background.paper' }}>
+
                 <DashboardIcon sx={{ color: '#4DCAE6', mr: 2, transform: 'translateY(-2px)' }} />
                 <Typography variant="h6" noWrap component="div" >
                   Ruffys Feuerstelle
                 </Typography>
+                <Box sx={{ flexGrow: 1 }}>
+                </Box>
+                <Login />
               </Toolbar>
             </AppBar>
             <Drawer
