@@ -88,85 +88,102 @@ export async function saveMatchAndUpdateStats(match: IMatch) {
 
     console.log(`Match buffer size: ${matchBuffer.length}, Augment stats buffer size: ${Object.keys(augmentStatsBuffer).length}`);
     // If buffer reaches 500, write to Firestore
-    if (matchBuffer.length + Object.keys(augmentStatsBuffer).length >= 500) {
+    if (matchBuffer.length >= 250) {
         await writeToFirestore();
     }
 }
 
-const MAX_RETRIES = 5;
-const RETRY_DELAY_MS = 1000;
-async function writeToFirestore() {
-    isWritingToFirestore = true; // Set the flag
+function createBatches(operations: any[]) {
+    const batches = [];
+    for (let i = 0; i < operations.length; i += 500) {
+        const batch = db.batch();
+        const operationsChunk = operations.slice(i, i + 500);
+        for (const operation of operationsChunk) {
+            if (operation.type === 'set') {
+                batch.set(operation.ref, operation.data);
+            } else {
+                batch.delete(operation.ref);
+            }
+        }
+        batches.push(batch);
+    }
+    return batches;
+}
 
-    console.log('Starting to write to Firestore...');
-
+async function writeToFirestoreBatches(batches: FirebaseFirestore.WriteBatch[]) {
+    const MAX_RETRIES = 5;
+    const RETRY_DELAY_MS = 1000;
     let success = false;
     let retryCount = 0;
+    let batchStart = 0;
+
     while (!success && retryCount < MAX_RETRIES) {
         try {
-            const batch = db.batch(); // Initialize a batched write operation
-
-            for (const match of matchBuffer) {
-                const matchRef = db.collection('tftmatches').doc(match.metadata.match_id);
-                batch.set(matchRef, match); // Add the match to the batched write operation
+            for (let i = batchStart; i < batches.length; i++) {
+                await batches[i].commit();
             }
-
-            const augmentStatsCollection = db.collection('augmentStats');
-            for (const statsKey in augmentStatsBuffer) {
-                const stats = augmentStatsBuffer[statsKey];
-
-                // Read the existing augment stats from Firestore
-                const augmentStatsSnapshot = await augmentStatsCollection.where('augment', '==', stats.augment)
-                    .where('augment_at_stage', '==', stats.augment_at_stage)
-                    .where('game_version', '==', stats.game_version)
-                    .get();
-
-                let augmentStatsRef: FirebaseFirestore.DocumentReference;
-                // Merge the existing stats with the buffer
-                if (!augmentStatsSnapshot.empty) {
-                    const existingStats = augmentStatsSnapshot.docs[0].data() as IAugmentStats;
-                    stats.total_games += existingStats.total_games;
-                    stats.wins += existingStats.wins;
-                    stats.games_with_placement_1_to_4 += existingStats.games_with_placement_1_to_4;
-                    stats.total_placement += existingStats.total_placement;
-                    stats.average_placement_at_stage = stats.total_placement / stats.total_games;
-                    augmentStatsRef = augmentStatsSnapshot.docs[0].ref;
-                } else {
-                    // Add the augment stats to the batched write operation
-                    augmentStatsRef = augmentStatsCollection.doc();
-                }
-
-                batch.set(augmentStatsRef, stats); // Add the augment stats to the batched write operation
-            }
-            await batch.commit(); // Commit the batched write operation to write all the augment stats to Firestore in a single write operation
-
-            matchBuffer = []; // Clear the match buffer
-            Object.keys(augmentStatsBuffer).forEach(key => delete augmentStatsBuffer[key]); // Clear the augment stats buffer
-
-            success = true; // Set the success flag
+            success = true;
         } catch (error) {
-            console.error(`Error writing to Firestore: ${error}`);
-            retryCount++; // Increment the retry count
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS)); // Wait for the retry delay
+            console.error(`Error writing to Firestore at batch starting from ${batchStart}: ${error}`);
+            retryCount++;
+            batchStart++;
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
         }
     }
 
-    if (success) {
-        console.log('Finished writing to Firestore.');
-    } else {
+    if (!success) {
         console.error(`Failed to write to Firestore after ${MAX_RETRIES} retries.`);
     }
-
-    isWritingToFirestore = false; // Clear the flag
 }
 
+async function writeToFirestore() {
+    isWritingToFirestore = true;
+    console.log('Starting to write to Firestore...');
+    const allOperations = [];
 
-// You may also want to expose a function to flush the buffer if your application shuts down
-export async function flushBuffer() {
-    if (matchBuffer.length > 0) {
-        await writeToFirestore();
+    // Prepare match operations
+    for (const match of matchBuffer) {
+        const matchRef = db.collection('tftmatches').doc(match.metadata.match_id);
+        allOperations.push({ type: 'set', ref: matchRef, data: match });
     }
+
+    // Prepare augmentStats operations
+    const augmentStatsCollection = db.collection('augmentStats');
+    for (const statsKey in augmentStatsBuffer) {
+        const stats = augmentStatsBuffer[statsKey];
+        const augmentStatsSnapshot = await augmentStatsCollection.where('augment', '==', stats.augment)
+            .where('augment_at_stage', '==', stats.augment_at_stage)
+            .where('game_version', '==', stats.game_version)
+            .get();
+
+        let augmentStatsRef: FirebaseFirestore.DocumentReference;
+        if (!augmentStatsSnapshot.empty) {
+            // Merge the existing stats with the buffer
+            const existingStats = augmentStatsSnapshot.docs[0].data() as IAugmentStats;
+            stats.total_games += existingStats.total_games;
+            stats.wins += existingStats.wins;
+            stats.games_with_placement_1_to_4 += existingStats.games_with_placement_1_to_4;
+            stats.total_placement += existingStats.total_placement;
+            stats.average_placement_at_stage = stats.total_placement / stats.total_games;
+            augmentStatsRef = augmentStatsSnapshot.docs[0].ref;
+        } else {
+            augmentStatsRef = augmentStatsCollection.doc();
+        }
+        allOperations.push({ type: 'set', ref: augmentStatsRef, data: stats });
+    }
+
+    const batches = createBatches(allOperations);
+    await writeToFirestoreBatches(batches);
+
+    matchBuffer = [];
+    Object.keys(augmentStatsBuffer).forEach(key => delete augmentStatsBuffer[key]);
+
+    console.log('Finished writing to Firestore.');
+    isWritingToFirestore = false;
 }
+
+
+
 
 /**
  * delete old matches 
