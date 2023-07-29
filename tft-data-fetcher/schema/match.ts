@@ -137,6 +137,9 @@ async function writeToFirestore() {
             }
             await batch.commit(); // Commit the batched write operation to write all the augment stats to Firestore in a single write operation
 
+            matchBuffer = []; // Clear the match buffer
+            Object.keys(augmentStatsBuffer).forEach(key => delete augmentStatsBuffer[key]); // Clear the augment stats buffer
+
             success = true; // Set the success flag
         } catch (error) {
             console.error(`Error writing to Firestore: ${error}`);
