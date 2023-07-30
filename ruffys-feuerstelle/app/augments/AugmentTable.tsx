@@ -13,7 +13,7 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import Toolbar from '@mui/material/Toolbar';
 import Paper from '@mui/material/Paper';
 import { visuallyHidden } from '@mui/utils';
-import { Checkbox, FormControl, FormControlLabel, FormGroup, InputBase, InputLabel, MenuItem, Select, Skeleton } from '@mui/material';
+import { Checkbox, FormControl, FormControlLabel, FormGroup, InputBase, InputLabel, MenuItem, Select, Skeleton, useTheme } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DataDragonAugment from './Augment';
 import { SelectChangeEvent } from '@mui/material/Select/SelectInput';
@@ -254,6 +254,7 @@ function EnhancedTableToolbar({
   handleGameVersionChange,
   gameVersions,
 }: EnhancedTableToolbarProps) {
+  const theme = useTheme();
   return (
     <Toolbar
       sx={{
@@ -263,31 +264,19 @@ function EnhancedTableToolbar({
         //   alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
       }}
     >
-      <FormGroup row sx={{
+      <FormGroup sx={{
         display: 'flex',
         justifyContent: 'space-between',
         width: '100%',
       }} >
-        <Search>
-          <SearchIconWrapper>
-            <SearchIcon />
-          </SearchIconWrapper>
-          <StyledInputBase
-            placeholder="Search…"
-            inputProps={{ 'aria-label': 'search' }}
-            value={search}
-            onChange={handleSearchChange}
-          />
-        </Search>
-        <div>
-          <FormControlLabel control={<Checkbox checked={checkBoxState.silver} onChange={handleCheckBoxChange} name='silver' />} label="Silver" />
-          <FormControlLabel control={<Checkbox checked={checkBoxState.gold} onChange={handleCheckBoxChange} name='gold' />} label="Gold" />
-          <FormControlLabel control={<Checkbox checked={checkBoxState.prismatic} onChange={handleCheckBoxChange} name='prismatic' />} label="Prismatic" />
-          {/* <FormControlLabel control={<Checkbox checked={checkBoxState.uncategorized} onChange={handleCheckBoxChange} name='uncategorized' />} label="uncategorized" />        */}
-        </div>
-        <FormControlLabel control={<Checkbox checked={checkBoxState.min50games} onChange={handleCheckBoxChange} name='min50games' />} label="Min 50 Games" />
-
-        <FormControl sx={{ width: 180 }} size='small'>
+        <FormControl
+          size='small'
+          sx={{
+            width: '100%',
+            mb: 1,
+            mt: 2
+          }}
+        >
           <InputLabel>Game Version</InputLabel>
           <Select
             value={gameVersion}
@@ -299,8 +288,41 @@ function EnhancedTableToolbar({
             })}
           </Select>
         </FormControl>
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+        }}>
+          <Search sx={{ height: 40 }}>
+            <SearchIconWrapper>
+              <SearchIcon />
+            </SearchIconWrapper>
+            <StyledInputBase
+              placeholder="Search…"
+              inputProps={{ 'aria-label': 'search' }}
+              value={search}
+              onChange={handleSearchChange}
+            />
+          </Search>
 
+          <FormGroup row sx={{
+            display: 'flex',
+            justifyContent: 'center',
+
+          }}>
+            <FormControlLabel control={<Checkbox size='medium' checked={checkBoxState.silver} onChange={handleCheckBoxChange} name='silver' />} label="Silver" />
+            <FormControlLabel control={<Checkbox size='medium' checked={checkBoxState.gold} onChange={handleCheckBoxChange} name='gold' />} label="Gold" />
+            <FormControlLabel control={<Checkbox size='medium' checked={checkBoxState.prismatic} onChange={handleCheckBoxChange} name='prismatic' />} label="Prismatic" />
+
+            {/* <FormControlLabel control={<Checkbox checked={checkBoxState.uncategorized} onChange={handleCheckBoxChange} name='uncategorized' />} label="uncategorized" />        */}
+          </FormGroup>
+          <FormControlLabel control={<Checkbox size='medium' checked={checkBoxState.min50games} onChange={handleCheckBoxChange} name='min50games' />} label="games > 50" />
+
+        </Box>
       </FormGroup>
+
+
+
     </Toolbar>
   );
 }
