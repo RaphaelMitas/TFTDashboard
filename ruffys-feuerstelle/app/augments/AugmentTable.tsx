@@ -260,8 +260,6 @@ function EnhancedTableToolbar({
       sx={{
         pl: { sm: 2 },
         pr: { xs: 1, sm: 1 },
-        // bgcolor: (theme) =>
-        //   alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
       }}
     >
       <FormGroup sx={{
