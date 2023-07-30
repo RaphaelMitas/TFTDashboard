@@ -11,7 +11,7 @@ async function getFirebaseAugmentStats() {
 
     const firebaseDb = admin.firestore()
     const firebaseData = (await firebaseDb.collection('augmentStats')
-        .where("game_version", "==", "Version 13.14.522.7601 (Jul 26 2023/16:00:35) [PUBLIC] <Releases/13.14>")
+        .orderBy("game_version", "asc")
         .orderBy("augment", "asc")
         .orderBy("augment_at_stage", "asc")
         .withConverter(firebaseAugmentStatsConverter)

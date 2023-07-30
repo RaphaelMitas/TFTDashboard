@@ -13,13 +13,15 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import Toolbar from '@mui/material/Toolbar';
 import Paper from '@mui/material/Paper';
 import { visuallyHidden } from '@mui/utils';
-import { Checkbox, FormControlLabel, FormGroup, InputBase, Typography } from '@mui/material';
+import { Checkbox, FormControl, FormControlLabel, FormGroup, InputBase, InputLabel, MenuItem, Select, Skeleton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DataDragonAugment from './Augment';
-import AugmentIcon from 'components/icons/AugmentsIcon';
+import { SelectChangeEvent } from '@mui/material/Select/SelectInput';
+import { useMemo } from 'react';
 
 
 interface Data {
+  game_version: string;
   augment: string;
   augmentQuality: string;
   icon: string;
@@ -33,6 +35,7 @@ interface Data {
 }
 
 function createData({
+  game_version = "",
   augment = "",
   augmentQuality = "uncategorized",
   icon = "",
@@ -45,6 +48,7 @@ function createData({
   at4_2 = "-",
 }): Data {
   return {
+    game_version,
     augment,
     augmentQuality,
     icon,
@@ -236,9 +240,20 @@ interface EnhancedTableToolbarProps {
   handleCheckBoxChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   search: string;
   handleSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  gameVersion: string;
+  handleGameVersionChange: (event: SelectChangeEvent<string>, child: React.ReactNode) => void;
+  gameVersions: string[];
 }
 
-function EnhancedTableToolbar({ checkBoxState, handleCheckBoxChange, search, handleSearchChange }: EnhancedTableToolbarProps) {
+function EnhancedTableToolbar({
+  checkBoxState,
+  handleCheckBoxChange,
+  search,
+  handleSearchChange,
+  gameVersion,
+  handleGameVersionChange,
+  gameVersions,
+}: EnhancedTableToolbarProps) {
   return (
     <Toolbar
       sx={{
@@ -268,9 +283,23 @@ function EnhancedTableToolbar({ checkBoxState, handleCheckBoxChange, search, han
           <FormControlLabel control={<Checkbox checked={checkBoxState.silver} onChange={handleCheckBoxChange} name='silver' />} label="Silver" />
           <FormControlLabel control={<Checkbox checked={checkBoxState.gold} onChange={handleCheckBoxChange} name='gold' />} label="Gold" />
           <FormControlLabel control={<Checkbox checked={checkBoxState.prismatic} onChange={handleCheckBoxChange} name='prismatic' />} label="Prismatic" />
-          <FormControlLabel control={<Checkbox checked={checkBoxState.uncategorized} onChange={handleCheckBoxChange} name='uncategorized' />} label="uncategorized" />
+          {/* <FormControlLabel control={<Checkbox checked={checkBoxState.uncategorized} onChange={handleCheckBoxChange} name='uncategorized' />} label="uncategorized" />        */}
         </div>
         <FormControlLabel control={<Checkbox checked={checkBoxState.min50games} onChange={handleCheckBoxChange} name='min50games' />} label="Min 50 Games" />
+
+        <FormControl sx={{ width: 180 }} size='small'>
+          <InputLabel>Game Version</InputLabel>
+          <Select
+            value={gameVersion}
+            onChange={handleGameVersionChange}
+            label="Game Version"
+          >
+            {gameVersions.map((gameVersion) => {
+              return <MenuItem key={gameVersion} value={gameVersion} >{gameVersion.replace("Version ", "")}</MenuItem>
+            })}
+          </Select>
+        </FormControl>
+
       </FormGroup>
     </Toolbar>
   );
@@ -280,6 +309,19 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
   const [order, setOrder] = React.useState<Order>('desc');
   const [orderBy, setOrderBy] = React.useState<keyof Data>('games');
   const [search, setSearch] = React.useState<string>('');
+  const gameVersions = React.useMemo(() => {
+    const gameVersions = new Set<string>();
+    augments.forEach((augment) => {
+      gameVersions.add(augment.game_version);
+    });
+    return Array.from(gameVersions).sort((a, b) => a > b ? -1 : 1);
+  }, [augments]);
+  const [gameVersion, setGameVersion] = React.useState<string>(gameVersions[0]);
+
+  const handleGameVersionChange = (event: SelectChangeEvent<string>) => {
+    setGameVersion(event.target.value as string);
+  };
+
   const [checkBoxState, setCheckBoxState] = React.useState({
     silver: false,
     gold: false,
@@ -290,6 +332,7 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
 
   const rows = augments.map((augment) => {
     return createData({
+      game_version: augment.game_version,
       augment: augment.label,
       augmentQuality: augment.augmentQuality,
       icon: augment.icon,
@@ -300,8 +343,9 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
       at2_1: augment.average_placement_at_stage_2 ? augment.average_placement_at_stage_2.toFixed(2) : '~',
       at3_2: augment.average_placement_at_stage_3 ? augment.average_placement_at_stage_3.toFixed(2) : '~',
       at4_2: augment.average_placement_at_stage_4 ? augment.average_placement_at_stage_4.toFixed(2) : '~',
-    });
+    })
   })
+
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
@@ -321,13 +365,37 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
     });
   };
 
-  const sortedRows = React.useMemo(() => {
+  const sortedRows = useMemo(() => {
     return rows
       .filter((row) => {
         return row.augment.toLowerCase().includes(search.toLowerCase());
+      }).filter((row) => {
+        if (row.game_version !== gameVersion) {
+          return false
+        }
+        if (checkBoxState.min50games) {
+          if (row.games < 50) {
+            return false
+          }
+        }
+        if (!(!checkBoxState.silver && !checkBoxState.gold && !checkBoxState.prismatic && !checkBoxState.uncategorized)) {
+          if (!checkBoxState.silver && row.augmentQuality === 'Silver') {
+            return false
+          }
+          if (!checkBoxState.gold && row.augmentQuality === 'Gold') {
+            return false
+          }
+          if (!checkBoxState.prismatic && row.augmentQuality === 'Prismatic') {
+            return false
+          }
+          if (!checkBoxState.uncategorized && row.augmentQuality === 'uncategorized') {
+            return false
+          }
+        }
+        return true
       })
       .sort(getComparator(order, orderBy));
-  }, [order, orderBy, search]);
+  }, [order, orderBy, search, checkBoxState, gameVersion, rows]);
 
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -341,7 +409,10 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
           checkBoxState={checkBoxState}
           handleCheckBoxChange={handleCheckBoxChange}
           search={search}
-          handleSearchChange={handleSearchChange} />
+          handleSearchChange={handleSearchChange}
+          gameVersion={gameVersion}
+          handleGameVersionChange={handleGameVersionChange}
+          gameVersions={gameVersions} />
         <TableContainer >
           <Table
             sx={{ minWidth: 750 }}
@@ -355,26 +426,6 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
             />
             <TableBody >
               {sortedRows.map((row, index) => {
-                if (checkBoxState.min50games) {
-                  if (row.games < 50) {
-                    return null
-                  }
-                }
-                if (!(!checkBoxState.silver && !checkBoxState.gold && !checkBoxState.prismatic && !checkBoxState.uncategorized)) {
-                  if (!checkBoxState.silver && row.augmentQuality === 'Silver') {
-                    return null
-                  }
-                  if (!checkBoxState.gold && row.augmentQuality === 'Gold') {
-                    return null
-                  }
-                  if (!checkBoxState.prismatic && row.augmentQuality === 'Prismatic') {
-                    return null
-                  }
-                  if (!checkBoxState.uncategorized && row.augmentQuality === 'uncategorized') {
-                    return null
-                  }
-                }
-
                 return (
                   <TableRow
                     hover
@@ -408,6 +459,89 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
                   </TableRow>
                 );
               })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+    </Box>
+  );
+}
+
+
+export function AugmentTableSkeleton() {
+
+  return (
+    <Box sx={{ width: '100%' }}>
+      <Paper sx={{ width: '100%', mb: 2, p: 2, }}>
+        <EnhancedTableToolbar
+          checkBoxState={{
+            silver: false,
+            gold: false,
+            prismatic: false,
+            uncategorized: false,
+            min50games: false,
+          }}
+          handleCheckBoxChange={() => { }}
+          search={''}
+          handleSearchChange={() => { }}
+          gameVersion={''}
+          handleGameVersionChange={() => { }}
+          gameVersions={[]} />
+        <TableContainer >
+          <Table
+            sx={{ minWidth: 750 }}
+            aria-labelledby="tableTitle"
+            size='medium'
+          >
+            <EnhancedTableHead
+              order={'desc'}
+              orderBy={'games'}
+              onRequestSort={() => { }}
+            />
+            <TableBody >
+              {Array.from({ length: 10 }, (_, index) => {
+                return (
+                  <TableRow
+                    hover
+                    tabIndex={-1}
+                    key={index}
+                  >
+                    <TableCell
+                      component="th"
+                      scope="row"
+                      padding="none"
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
+                        <Skeleton variant="rounded" width={28} height={28} />
+                        <Box sx={{ p: 1 }} />
+                        <Skeleton variant="text" width={100} />
+                      </Box>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Skeleton variant="text" width={100} />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Skeleton variant="text" width={100} />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Skeleton variant="text" width={100} />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Skeleton variant="text" width={100} />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Skeleton variant="text" width={100} />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Skeleton variant="text" width={100} />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Skeleton variant="text" width={100} />
+                    </TableCell>
+                  </TableRow>
+                );
+              }
+              )}
             </TableBody>
           </Table>
         </TableContainer>

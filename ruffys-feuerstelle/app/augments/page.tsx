@@ -1,25 +1,11 @@
 import * as React from 'react';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
-import Augment, { } from './Augment';
-import AugmentTable from './AugmentTable';
-import { getServerSession } from 'next-auth';
-import { authOptions } from 'app/api/auth/[...nextauth]/NextAuthOptions';
-import { Typography } from '@mui/material';
+import { Suspense } from 'react';
+import AugmentSSR from './AugmentSSR';
+import { AugmentTableSkeleton } from './AugmentTable';
 
 export default async function AugmentPage() {
-
-  const REVALIDATE_AUGMENTS = 60 * 60 * 6 // 6 hour
-  //fetch from local api route
-  const res = await fetch(`${process.env.BASE_URL}/api/augments?secret=${process.env.SERVER_SECRET}`, { next: { revalidate: REVALIDATE_AUGMENTS } })
-  let data: Augment[] = []
-  if (res.status === 200) {
-    data = (await res.json() as { augments: Augment[] }).augments
-  }
-
-
-  const session = await getServerSession(authOptions);
-
 
   return (
     <Container>
@@ -32,17 +18,9 @@ export default async function AugmentPage() {
           alignItems: 'center',
         }}
       >
-        {(session?.user?.email === '***REMOVED***' || session?.user?.email === '***REMOVED***') ?
-          <AugmentTable augments={Augment.toJSON(data)} /> :
-          <>
-            <Typography variant="h4" component="h1" gutterBottom>
-              Not Allowed
-            </Typography>
-            <Typography variant="h6" component="h2" gutterBottom>
-              Please sign in with an allowed account
-            </Typography>
-          </>
-        }
+        <Suspense fallback={<AugmentTableSkeleton />}>
+          <AugmentSSR />
+        </Suspense>
       </Box>
     </Container>
   );
