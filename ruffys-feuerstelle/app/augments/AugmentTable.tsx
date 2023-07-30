@@ -27,8 +27,8 @@ interface Data {
   icon: string;
   games: number;
   place: string,
-  top4: string,
-  win: string,
+  top4: number,
+  win: number,
   at3_2: string;
   at2_1: string;
   at4_2: string;
@@ -41,8 +41,8 @@ function createData({
   icon = "",
   games = 0,
   place = "0",
-  top4 = '0%',
-  win = '0%',
+  top4 = 0,
+  win = 0,
   at2_1 = "-",
   at3_2 = "-",
   at4_2 = "-",
@@ -358,8 +358,8 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
       icon: augment.icon,
       games: augment.total_games,
       place: augment.average_placement.toFixed(2),
-      top4: `${augment.top4_percent.toFixed(2)}%`,
-      win: `${augment.win_percent.toFixed(2)}%`,
+      top4: augment.top4_percent * 100,
+      win: augment.win_percent * 100,
       at2_1: augment.average_placement_at_stage_2 ? augment.average_placement_at_stage_2.toFixed(2) : '~',
       at3_2: augment.average_placement_at_stage_3 ? augment.average_placement_at_stage_3.toFixed(2) : '~',
       at4_2: augment.average_placement_at_stage_4 ? augment.average_placement_at_stage_4.toFixed(2) : '~',
@@ -469,10 +469,10 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
                         {row.augment}
                       </Box>
                     </TableCell>
-                    <TableCell align="right">{row.games >= 10000 ? `${(row.games / 100).toFixed()}K` : row.games}</TableCell>
+                    <TableCell align="right">{row.games >= 10000 ? `${(row.games / 1000).toFixed()}K` : row.games}</TableCell>
                     <TableCell align="right">{row.place}</TableCell>
-                    <TableCell align="right">{row.top4}</TableCell>
-                    <TableCell align="right">{row.win}</TableCell>
+                    <TableCell align="right">{`${row.top4.toFixed()}%`}</TableCell>
+                    <TableCell align="right">{`${row.win.toFixed()}%`}</TableCell>
                     <TableCell align="right">{row.at2_1}</TableCell>
                     <TableCell align="right">{row.at3_2}</TableCell>
                     <TableCell align="right">{row.at4_2}</TableCell>
