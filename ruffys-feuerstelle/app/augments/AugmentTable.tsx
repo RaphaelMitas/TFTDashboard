@@ -13,11 +13,13 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import Toolbar from '@mui/material/Toolbar';
 import Paper from '@mui/material/Paper';
 import { visuallyHidden } from '@mui/utils';
-import { Checkbox, FormControl, FormControlLabel, FormGroup, InputBase, InputLabel, MenuItem, Select, Skeleton, Tooltip, Typography, useTheme } from '@mui/material';
+import { Button, Checkbox, FormControl, FormControlLabel, FormGroup, IconButton, InputBase, InputLabel, MenuItem, Select, Skeleton, Tooltip, Typography, useTheme } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DataDragonAugment from './Augment';
 import { SelectChangeEvent } from '@mui/material/Select/SelectInput';
 import { useMemo } from 'react';
+import CancelIcon from '@mui/icons-material/Cancel';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 
 
 interface Data {
@@ -242,7 +244,7 @@ interface EnhancedTableToolbarProps {
   };
   handleCheckBoxChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   search: string;
-  handleSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  setSearch: (search: string) => void;
   gameVersion: string;
   handleGameVersionChange: (event: SelectChangeEvent<string>, child: React.ReactNode) => void;
   gameVersions: string[];
@@ -252,12 +254,14 @@ function EnhancedTableToolbar({
   checkBoxState,
   handleCheckBoxChange,
   search,
-  handleSearchChange,
+  setSearch,
   gameVersion,
   handleGameVersionChange,
   gameVersions,
 }: EnhancedTableToolbarProps) {
-  const theme = useTheme();
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(event.target.value)
+  }
   return (
     <Toolbar
       sx={{
@@ -294,17 +298,29 @@ function EnhancedTableToolbar({
           flexDirection: 'row',
           justifyContent: 'space-between',
         }}>
-          <Search sx={{ height: 40 }}>
-            <SearchIconWrapper>
-              <SearchIcon />
-            </SearchIconWrapper>
-            <StyledInputBase
-              placeholder="Search…"
-              inputProps={{ 'aria-label': 'search' }}
-              value={search}
-              onChange={handleSearchChange}
-            />
-          </Search>
+
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'row',
+          }}>
+            <Search sx={{ height: 40 }}>
+              <SearchIconWrapper>
+                <SearchIcon />
+              </SearchIconWrapper>
+
+              <StyledInputBase
+                placeholder="Search…"
+                inputProps={{ 'aria-label': 'search' }}
+                value={search}
+                onChange={handleSearchChange}
+              />
+              {search && (
+                <IconButton onClick={() => setSearch('')} sx={{ position: 'absolute', right: 0 }}>
+                  <CancelIcon />
+                </IconButton>
+              )}
+            </Search>
+          </Box>
 
           <FormGroup row sx={{
             display: 'flex',
@@ -422,9 +438,7 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
   }, [order, orderBy, search, checkBoxState, gameVersion, rows]);
 
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(event.target.value)
-  }
+
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -433,7 +447,7 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
           checkBoxState={checkBoxState}
           handleCheckBoxChange={handleCheckBoxChange}
           search={search}
-          handleSearchChange={handleSearchChange}
+          setSearch={setSearch}
           gameVersion={gameVersion}
           handleGameVersionChange={handleGameVersionChange}
           gameVersions={gameVersions} />
@@ -516,7 +530,7 @@ export function AugmentTableSkeleton() {
           }}
           handleCheckBoxChange={() => { }}
           search={''}
-          handleSearchChange={() => { }}
+          setSearch={() => { }}
           gameVersion={''}
           handleGameVersionChange={() => { }}
           gameVersions={[]} />
