@@ -87,10 +87,31 @@ async function getFirebaseAugmentStats() {
         }
 
 
-
         const parsedIcon = dragonItem.icon.toLocaleLowerCase().replace(".tex", ".png")
-        // parsedIcon = parsedIcon
         const iconURL = communityDragonBaseURL + parsedIcon;
+
+        let desc = dragonItem.desc ? dragonItem.desc : '';
+
+
+        desc = desc.replace(/<tftitemrules>.*<\/tftitemrules>/gi, '')
+        desc = desc.replace(/<br>/gi, '')
+        let splittedDesc = desc.split(/(@[a-z*0-9]+@)/gi)
+        let counter = 0
+        const effectKeys = Object.keys(dragonItem.effects)
+        splittedDesc = splittedDesc.map((part) => {
+            if (part.startsWith('@')) {
+                let effect = dragonItem.effects[effectKeys[counter]]
+                counter++
+                if (effect === 'null')
+                    return 'null'
+                if (part.includes('*100')) {
+                    effect = effect * 100
+                }
+                return `${Math.round(effect * 100) / 100}`
+            }
+            return part
+        })
+        desc = splittedDesc.join('')
 
 
         augments.push(new Augment({
@@ -98,7 +119,7 @@ async function getFirebaseAugmentStats() {
             augmentQuality: dragonItem.augmentQuality,
             associatedTraits: dragonItem.associatedTraits,
             composition: dragonItem.composition,
-            desc: dragonItem.desc,
+            desc: desc,
             effects: dragonItem.effects,
             icon: iconURL,
             incompatibleTraits: dragonItem.incompatibleTraits,

@@ -5,7 +5,7 @@ export interface DataDragonAugmentInterface {
     augmentQuality: string;
     associatedTraits: string[];
     composition: string[];
-    desc: null | string;
+    desc: string;
     effects: { [key: string]: number | EffectEnum };
     icon: string;
     incompatibleTraits: string[];
@@ -206,7 +206,7 @@ export default class Augment implements DataDragonAugment, DBAugment {
     augmentQuality: string;
     associatedTraits: string[];
     composition: string[];
-    desc: string | null;
+    desc: string;
     effects: { [key: string]: number | EffectEnum; };
     icon: string;
     incompatibleTraits: string[];
