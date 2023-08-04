@@ -17,10 +17,8 @@ import { Button, Checkbox, FormControl, FormControlLabel, FormGroup, IconButton,
 import SearchIcon from '@mui/icons-material/Search';
 import DataDragonAugment from './Augment';
 import { SelectChangeEvent } from '@mui/material/Select/SelectInput';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import CancelIcon from '@mui/icons-material/Cancel';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
-
 
 interface Data {
   game_version: string;
@@ -162,7 +160,6 @@ function EnhancedTableHead(props: EnhancedTableProps) {
     (property: keyof Data) => (event: React.MouseEvent<unknown>) => {
       onRequestSort(event, property);
     };
-
   return (
     <TableHead>
       <TableRow>
@@ -262,11 +259,28 @@ function EnhancedTableToolbar({
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(event.target.value)
   }
+  const clearSearch = () => {
+    setSearch('');
+  };
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      clearSearch(); // Call clearSearch when Escape key is pressed
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   return (
     <Toolbar
       sx={{
-        pl: { sm: 2 },
-        pr: { xs: 1, sm: 1 },
+        pl: { sm: 0 },
+        pr: { xs: 0, sm: 0 },
       }}
     >
       <FormGroup sx={{
@@ -279,7 +293,7 @@ function EnhancedTableToolbar({
           sx={{
             width: '100%',
             mb: 1,
-            mt: 2
+            mt: 0.5
           }}
         >
           <InputLabel>Game Version</InputLabel>
@@ -315,7 +329,7 @@ function EnhancedTableToolbar({
                 onChange={handleSearchChange}
               />
               {search && (
-                <IconButton onClick={() => setSearch('')} sx={{ position: 'absolute', right: 0 }}>
+                <IconButton onClick={clearSearch} sx={{ position: 'absolute', right: 0 }}>
                   <CancelIcon />
                 </IconButton>
               )}
@@ -476,25 +490,26 @@ export default function AugmentTable({ augments }: { augments: DataDragonAugment
                       padding="none"
 
                     >
-                      <Tooltip title={
-                        <div>
-                          <Typography variant='body2'>{row.tooltip}</Typography>
-                          <br />
-                          <div> Warning: The data is not official and might be wrong.</div>
-                        </div>
-                      } placement="top">
-                        <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
-                          {<img
+                      <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
+                        <Tooltip title={
+                          <div>
+                            <Typography variant='body1'>{row.augment}</Typography>
+                            <div> Warning: The data is not official and might be wrong.</div>
+                            <br />
+                            <Typography variant='body2'>{row.tooltip}</Typography>
+                          </div>
+                        } placement="right-start">
+                          <img
                             loading='lazy'
                             src={row.icon}
                             alt={row.augment}
                             height='28px'
                             width='28px'
-                          />}
-                          <Box sx={{ p: 1 }} />
-                          {row.augment}
-                        </Box>
-                      </Tooltip>
+                          />
+                        </Tooltip>
+                        <Box sx={{ p: 1 }} />
+                        {row.augment}
+                      </Box>
                     </TableCell>
                     <TableCell align="right">{row.games >= 10000 ? `${(row.games / 1000).toFixed()}K` : row.games}</TableCell>
                     <TableCell align="right">{row.place}</TableCell>
