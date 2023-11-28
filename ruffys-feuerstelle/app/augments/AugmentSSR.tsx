@@ -15,7 +15,7 @@ export default async function AugmentSSR() {
     const session = await getServerSession()
 
     return <>
-        {(session?.user?.email === '***REMOVED***' || session?.user?.email === '***REMOVED***') ?
+        {(session?.user?.email) ?
             <AugmentTable augments={data} />
             :
             <>
